@@ -105,7 +105,7 @@
     }
 
     Gamestate.prototype.getLegalMoves = function() {
-      
+
       var first_row = this.board[0];
       var legalMoves = [];
 
@@ -120,10 +120,126 @@
     }
 
     Gamestate.prototype.checkForWin = function(_r, _c, player) {
-      console.log("Not implemented");
+
+      var rmin = clamp(_r - 3, 0, this.height);
+      var rmax = clamp(_r + 3, 0, this.height - 1);
+      var cmin = clamp(_c - 3, 0, this.width);
+      var cmax = clamp(_c + 3, 0, this.width - 1);
+
+      row = this.board[_r];
+      var col = [];
+      for (var r = 0; r < this.board.length; r++) {
+        col.push(this.board[r][_c]);
+      }
+
+      // Check column for victory
+      var count = 0;
+      for (var c = cmin; c <= cmax; c++) {
+        if (row[c] == player) {
+          count += 1;
+        } else {
+          count = 0;
+        }
+
+        if (count == 4) {
+          this.winner = player;
+        }
+      }
+
+      // Check row for victory
+      var count = 0;
+      for (var r = rmin; r <= rmax; r++) {
+        if (col[r] == player) {
+          count += 1;
+        } else {
+          count = 0;
+        }
+
+        if (count == 4) {
+          this.winner = player;
+        }
+      }
+
+      // Check diagonal direction -> /
+      var count = 0;
+      var row_indicies = [];
+      var col_indicies = [];
+
+      for (var i = rmax; i >= rmin; i--) {
+        row_indicies.push(i);
+      }
+
+      for (var i = cmin; i <= cmax; i++) {
+        col_indicies.push(i);
+      }
+
+      var indicies = zip(row_indicies, col_indicies);
+
+      for (var i = 0; i < indicies.length; i++) {
+        var r = indicies[i][0];
+        var c = indicies[i][1];
+
+        if (this.board[r][c] == player) {
+          count += 1;
+        } else {
+          count = 0;
+        }
+
+        if (count == 4) {
+          this.winner = player;
+        }
+
+      }
+
+      // Check diagonal direction -> \
+      var count = 0;
+      var row_indicies = [];
+      var col_indicies = [];
+
+      for (var i = rmin; i <= rmax; i++) {
+        row_indicies.push(i);
+      }
+
+      for (var i = cmin; i <= cmax; i++) {
+        col_indicies.push(i);
+      }
+
+      var indicies = zip(row_indicies, col_indicies);
+
+      for (var i = 0; i < indicies.length; i++) {
+        var r = indicies[i][0];
+        var c = indicies[i][1];
+
+        if (this.board[r][c] == player) {
+          count += 1;
+        } else {
+          count = 0;
+        }
+
+        if (count == 4) {
+          this.winner = player;
+        }
+
+      }
+
+      // If the top row has no empty slots and we got here, its a draw
+      if (this.board[0].indexOf(0) == -1) {
+        this.winner = 0;
+      }
+
+
     }
 
     Gamestate.prototype.copy = function() {
+
+      var gameState = new Gamestate();
+      for (var r = 0; r < this.board.length; r++) {
+        gameState.board[r] = this.board[r].slice(0);
+      }
+      gameState.currentPlayer = this.currentPlayer;
+      gameState.winner = this.winner;
+
+      return gameState;
 
     }
 
@@ -158,6 +274,12 @@
     });
 
     $board.delegate(".cell", "click", function(event) {
+
+      // If someone has won, don't bother with trying to place a piece sillyhead
+      if (cf.winner != null) {
+        return
+      }
+
       var col = $(this).index();
       var player = cf.currentPlayer;
       var row = cf.executeMove(col);
@@ -185,9 +307,38 @@
             $(this).remove();
         });
 
+        cf.checkForWin(row, col, player);
+        if (cf.winner == null) {
+          console.log('no winner yet');
+        } else if (cf.winner == 1) {
+          console.log('player 1 wins');
+        } else if (cf.winner == 2) {
+          console.log('player 2 wins');
+        } else if (cf.winner == 0) {
+          console.log('its a draw baby');
+        }
+
       }
 
     });
+
+    // Utility functions
+    function clamp(value, minimum, maximum) {
+      return Math.max(minimum, Math.min(value, maximum));
+    }
+
+    function zip(array1, array2) {
+
+      var length = Math.min(array1.length, array2.length);
+      var zipped = [];
+
+      for (var i = 0; i < length; i++) {
+          zipped.push([array1[i], array2[i]]);
+      }
+
+      return zipped;
+
+    }
 
   </script>
 
