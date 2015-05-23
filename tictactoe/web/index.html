@@ -3,21 +3,193 @@
 <head>
   <meta charset="utf-8">
   <title></title>
-  <link rel="stylesheet" type="text/css" href="style.css">
+  <script type="text/javascript" src="http://code.jquery.com/jquery-1.11.3.min.js"></script>
+  <style type="text/css">
+
+    .board {
+      position: relative;
+      width: 700px;
+      height: 600px;
+      border-top: 1px solid #AAA;
+      border-left: 1px solid #AAA;
+      background-color: #000;
+    }
+
+    .board .row {
+      width: auto;
+      height: 100px;
+      background-color: #eee;
+      box-sizing: border-box;
+    }
+
+    .board .cell {
+      width: 100px;
+      height: 100px;
+      display: inline-block;
+      border-right: 1px solid #AAA;
+      border-bottom: 1px solid #AAA;
+      border-collapse: collapse;
+      box-sizing: border-box;
+    }
+
+    .token {
+      width: 100px;
+      height: 100px;
+      border-radius: 50px;
+    }
+
+    .token.animated {
+      position: absolute;
+    }
+
+    .token.p1 {
+      background-color: #333;
+    }
+
+    .token.p2 {
+      background-color: #E33;
+    }
+
+  </style>
 </head>
 <body>
 
-  <h1>Monte Carlo Tree Search - Connect Four</h1>
-  <table class="board">
-  </table>
-  <div class="options">
-  </div>
+  <h1>A Board</h1>
+  <div class="board"></div>
 
-  <script type="text/javascript" src="http://code.jquery.com/jquery-1.11.3.min.js"></script>
-  <script type="text/javascript" src="board.js"></script>
-  <script type="text/javascript" src="connectfour.js"></script>
+  <script type="text/javascript">
+    var WIDTH = 7;
+    var HEIGHT = 6;
+
+    function Gamestate() {
+      //TODO: Make this dynamically created
+      this.board = [
+        [0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0],
+      ];
+
+      this.currentPlayer = 1;
+      this.width = WIDTH;
+      this.height = HEIGHT;
+      this.winner = null;
+
+    }
+
+    Gamestate.prototype.executeMove = function(move) {
+      var column = [];
+      var row = -1;
+
+      for (var r = 0; r < this.board.length; r++) {
+        column.push(this.board[r][move]);
+      }
+
+      for (var r = column.length - 1; r >= 0; r--) {
+        if (column[r] == 0) {
+          row = r;
+          break;
+        }
+      }
+
+      if (row != -1) {
+        this.board[row][move] = this.currentPlayer;
+        this.checkForWin(row, move, this.currentPlayer);
+        this.currentPlayer = 3 - this.currentPlayer;
+      }
+
+      return row;
+
+    }
+
+    Gamestate.prototype.getLegalMoves = function() {
+      
+      var first_row = this.board[0];
+      var legalMoves = [];
+
+      for (var i = 0; i < first_row.length; i++) {
+        if (first_row[i] == 0) {
+          legalMoves.push(i);
+        }
+      }
+
+      return legalMoves;
+
+    }
+
+    Gamestate.prototype.checkForWin = function(_r, _c, player) {
+      console.log("Not implemented");
+    }
+
+    Gamestate.prototype.copy = function() {
+
+    }
+
+    var cf = new Gamestate();
+
+    $board = $(".board");
+
+    for (var i = 0; i < HEIGHT; i++) {
+      var $newRow = $("<div>").addClass("row");
+      $board.append($newRow);
+
+      for (var j = 0; j < WIDTH; j++) {
+        var columnNumber = "col" + j;
+        var newCell = $("<div>").addClass("cell").addClass(columnNumber);
+        $newRow.append(newCell);
+      }
+
+    }
+
+    $board.delegate(".cell", "mouseover mouseout", function(event) {
+      var color;
+      var index = $(this).index();
+      var columnNumber = ".col" + index;
+      if (event.type == "mouseover") {
+        color = "#CCC";
+      } else if (event.type == "mouseout") {
+        color = "#EEE";
+      }
+
+      $board.find(columnNumber).css("background-color", color);
+
+    });
+
+    $board.delegate(".cell", "click", function(event) {
+      var col = $(this).index();
+      var player = cf.currentPlayer;
+      var row = cf.executeMove(col);
+
+      if (row != -1) {
+        var $row = $board.children().eq(row);
+        var $cell = $row.children().eq(col);
+
+        var $token = $("<div>").addClass("token").addClass("p" + player);
+
+        var x = (100 * col) + "px";
+        var y = (100 * row) + "px";
+
+        var $animatedToken = $("<div>")
+          .addClass("token")
+          .addClass("animated")
+          .addClass("p" + player)
+          .css({"left": x})
+          .css({"top": "0px"});
+
+        $board.append($animatedToken);
+
+        $animatedToken.animate({"top": y}, 300, function() {
+            $cell.append($token);
+            $(this).remove();
+        });
+
+      }
+
+    });
+
+  </script>
 
 </body>
 </html>
-
-
