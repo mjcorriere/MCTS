@@ -64,7 +64,7 @@
 
     var cf = new Gamestate();
 
-    $board = $(".board");
+    var $board = $(".board");
 
     for (var i = 0; i < HEIGHT; i++) {
       var $newRow = $("<div>").addClass("row");
@@ -103,7 +103,14 @@
       var player = cf.currentPlayer;
       var row = cf.executeMove(col);
 
+      placeToken(row, col, player);
+
+    });
+
+    function placeToken(row, col, player) {
+
       if (row != -1) {
+
         var $row = $board.children().eq(row);
         var $cell = $row.children().eq(col);
 
@@ -121,12 +128,15 @@
 
         $board.append($animatedToken);
 
-        $animatedToken.animate({"top": y}, 300, function() {
-            $cell.append($token);
-            $(this).remove();
-        });
+        setTimeout(function() {
 
-        cf.checkForWin(row, col, player);
+          $animatedToken.animate({"top": y}, 300, function() {
+              $cell.append($token);
+              $(this).remove();
+          });
+
+        }, 500);
+
         if (cf.winner == null) {
           console.log('no winner yet');
         } else if (cf.winner == 1) {
@@ -139,9 +149,27 @@
 
       }
 
-    });
+    }
 
+    function go() {
 
+      var root = new mcts.MCTSNode(cf);
+      var node = root;
+
+      while (cf.winner === null) {
+        var move = mcts.mcts(node, 1000);
+        var player = cf.currentPlayer;
+        var row = cf.executeMove(move);
+
+        placeToken(row, move, player);
+
+        node = new mcts.MCTSNode(cf);
+
+        console.log(cf);
+        console.log("Move:", move);
+      }
+
+    }
 
   </script>
 
