@@ -128,14 +128,10 @@
 
         $board.append($animatedToken);
 
-        setTimeout(function() {
-
-          $animatedToken.animate({"top": y}, 300, function() {
-              $cell.append($token);
-              $(this).remove();
+        $animatedToken.animate({"top": y}, 300, function() {
+            $cell.append($token);
+            $(this).remove();
           });
-
-        }, 500);
 
         if (cf.winner == null) {
           console.log('no winner yet');
@@ -154,9 +150,13 @@
     function go() {
 
       var root = new mcts.MCTSNode(cf);
-      var node = root;
+      calculateNextMove(root);
 
-      while (cf.winner === null) {
+    }
+
+    function calculateNextMove(node) {
+
+      if (cf.winner === null) {
         var move = mcts.mcts(node, 1000);
         var player = cf.currentPlayer;
         var row = cf.executeMove(move);
@@ -167,6 +167,11 @@
 
         console.log(cf);
         console.log("Move:", move);
+
+        setTimeout(function() {
+          calculateNextMove(node);
+        }, 500);
+
       }
 
     }
