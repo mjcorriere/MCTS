@@ -61,10 +61,15 @@ Gamestate.prototype.getLegalMoves = function() {
 
 Gamestate.prototype.checkForWin = function(_r, _c, player) {
 
-  var rmin = clamp(_r - 3, 0, this.height);
-  var rmax = clamp(_r + 3, 0, this.height - 1);
-  var cmin = clamp(_c - 3, 0, this.width);
-  var cmax = clamp(_c + 3, 0, this.width - 1);
+  // var rmin = clamp(_r - 3, 0, this.height);
+  // var rmax = clamp(_r + 3, 0, this.height - 1);
+  // var cmin = clamp(_c - 3, 0, this.width);
+  // var cmax = clamp(_c + 3, 0, this.width - 1);
+
+  var rmin = _r - 3;
+  var rmax = _r + 3;
+  var cmin = _c - 3;
+  var cmax = _c + 3;
 
   row = this.board[_r];
   var col = [];
@@ -75,6 +80,11 @@ Gamestate.prototype.checkForWin = function(_r, _c, player) {
   // Check column for victory
   var count = 0;
   for (var c = cmin; c <= cmax; c++) {
+    
+    if (c < 0 || c >= this.width) {
+      continue;
+    }
+
     if (row[c] == player) {
       count += 1;
     } else {
@@ -89,6 +99,11 @@ Gamestate.prototype.checkForWin = function(_r, _c, player) {
   // Check row for victory
   var count = 0;
   for (var r = rmin; r <= rmax; r++) {
+    
+    if (r < 0 || r >= this.height) {
+      continue;
+    }
+
     if (col[r] == player) {
       count += 1;
     } else {
@@ -118,6 +133,12 @@ Gamestate.prototype.checkForWin = function(_r, _c, player) {
   for (var i = 0; i < indicies.length; i++) {
     var r = indicies[i][0];
     var c = indicies[i][1];
+
+    if (c < 0 || c >= this.width) {
+      continue;
+    } else if (r < 0 || r >= this.height) {
+      continue;
+    }
 
     if (this.board[r][c] == player) {
       count += 1;
@@ -149,6 +170,12 @@ Gamestate.prototype.checkForWin = function(_r, _c, player) {
   for (var i = 0; i < indicies.length; i++) {
     var r = indicies[i][0];
     var c = indicies[i][1];
+
+    if (c < 0 || c >= this.width) {
+      continue;
+    } else if (r < 0 || r >= this.height) {
+      continue;
+    }    
 
     if (this.board[r][c] == player) {
       count += 1;
