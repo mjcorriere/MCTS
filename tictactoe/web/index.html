@@ -62,6 +62,8 @@
 
   <script type="text/javascript">
 
+    var PLAYER1 = 1;
+    var PLAYER2 = 2;
     var cf = new Gamestate();
 
     var $board = $(".board");
@@ -104,6 +106,10 @@
       var row = cf.executeMove(col);
 
       placeToken(row, col, player);
+
+      setTimeout(function() {
+        makeComputerMove(100);
+      }, 500);
 
     });
 
@@ -173,6 +179,37 @@
         }, 500);
 
       }
+
+    }
+
+    function makeComputerMove(iterations) {
+      if (cf.winner === null) {
+
+        var node = new mcts.MCTSNode(cf);
+        var move = mcts.mcts(node, iterations);
+        var player = cf.currentPlayer;
+        var row = cf.executeMove(move);
+
+        placeToken(row, move, player);
+
+      }
+    }
+
+    function testSetup() {
+      placeToken(cf.executeMove(3), 3, 1);
+      placeToken(cf.executeMove(2), 2, 2);
+
+      placeToken(cf.executeMove(2), 2, 1);
+      placeToken(cf.executeMove(1), 1, 2);
+
+      placeToken(cf.executeMove(1), 1, 1);
+      placeToken(cf.executeMove(0), 0, 2);
+
+      placeToken(cf.executeMove(1), 1, 1);
+      placeToken(cf.executeMove(0), 0, 2);
+
+      placeToken(cf.executeMove(0), 0, 1);
+      placeToken(cf.executeMove(5), 5, 2);
 
     }
 
