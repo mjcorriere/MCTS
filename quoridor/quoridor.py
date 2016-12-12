@@ -5,29 +5,49 @@ class QuoridorGameState(object):
 
     def __init__(self, size=9):
 
+        self.H1 = 1
+        self.V1 = 2
+        self.H2 = 4
+        self.V2 = 8
+        self.BORDER = 42
+
         assert size % 2 == 1
-        self.size = size
-        self.horizontalEdges = [0] * (size * size)
-        self.verticalEdges = [0] * (size * size)
+        # A board will be size x size cells square
+        self.boardSize = size
 
-        # Add walls to the rim of the board
-        self.horizontalEdges[:size] = [3] * size
-        self.horizontalEdges[-size:] = [3] * size
-        self.verticalEdges[:size] = [3] * size
-        self.verticalEdges[-size:] = [3] * size
+        # The number of vertices per side
+        self.vertexSize = self.boardSize + 1
 
-        p1 = size / 2
-        p2 = size * size - size / 2
+        # The number of vertices in on the board
+        numVertexes = self.vertexSize ** 2
+
+        # Walls will be stored at the vertices. Horizontal and vertical edges
+        # are kept separately to simplify the representation
+        self.walls = [0] * numVertexes
+
+        # Add walls to the rim of the board. This is useful to simplify finding
+        # legal moves. Moving off the edge is no longer a corner case.
+        # 42 was chosen because it is a great magic number.
+        self.walls[:self.vertexSize] = [self.BORDER] * self.vertexSize
+        self.walls[-self.vertexSize:] = [self.BORDER] * self.vertexSize
+        for i in xrange(0, self.boardSize**2, self.boardSize):
+            self.walls[i] = self.BORDER
+            self.walls[i + self.boardSize - 1] = self.BORDER
+
+        # Starting positions and starting number of walls to place
+        p1 = self.boardSize / 2
+        p2 = self.boardSize * self.boardSize - self.boardSize / 2
         self.playerPositions = [p1, p2]
-        self.numPlayerWalls = [size + 1, size + 1]
+
+        self.numPlayerWalls = [10, 10]
 
         self.currentPlayer = 1
-
         self.winner = None
 
+        # The movement map
         self.distance = {
-            'N': -self.size,
-            'S': self.size,
+            'N': -self.boardSize,
+            'S': self.boardSize,
             'E': 1,
             'W': -1
         }
@@ -42,9 +62,9 @@ class QuoridorGameState(object):
 
         # Get horizontal + vertical moves
         h = ['h' + str(i) for i, p in
-                enumerate(self.horizontalEdges) if p == 0]
+                enumerate(self.horizontalWalls) if p == 0]
         v = ['v' + str(i) for i, p in
-                enumerate(self.verticalEdges) if p == 0]
+                enumerate(self.verticalWalls) if p == 0]
 
         # Get player moves
         # N, S, E, W
