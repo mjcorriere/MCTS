@@ -1,24 +1,19 @@
 __author__ = 'Markus'
 
 
+class WallType():
+    EMPTY = 0
+    PLAYER1 = 1
+    PLAYER2 = 2
+    HORIZONTAL = 4
+    VERTICAL = 8
+
+
 class QuoridorGameState(object):
 
     def __init__(self, size=9):
 
         assert size % 2 == 1
-
-        self.EMPTY_WALL = 0
-
-        self.H1 = 1
-        self.V1 = 2
-        self.H2 = 4
-        self.V2 = 8
-
-        self.HBORDER = 42
-        self.VBORDER = 43
-
-        self.horizontalWalls = [self.H1, self.H2, self.HBORDER]
-        self.verticalWalls = [self.V1, self.V2, self.VBORDER]
 
         # A board will be size x size cells square
         self.boardSize = size
@@ -31,16 +26,26 @@ class QuoridorGameState(object):
 
         # Walls will be stored at the vertices. Horizontal and vertical edges
         # are kept separately to simplify the representation
-        self.walls = [self.EMPTY_WALL] * self.numVertexes
+        self.walls = [WallType.EMPTY] * self.numVertexes
 
         # Add walls to the rim of the board. This is useful to simplify finding
         # legal moves. Moving off the edge is no longer a corner case.
-        self.walls[:self.vertexSize] = [self.HBORDER] * self.vertexSize
-        self.walls[-self.vertexSize:] = [self.HBORDER] * self.vertexSize
+        self.walls[:self.vertexSize] = [WallType.HORIZONTAL] * self.vertexSize
+        self.walls[-self.vertexSize:] = [WallType.HORIZONTAL] * self.vertexSize
         for i in xrange(self.vertexSize, self.numVertexes - self.vertexSize,
                             self.vertexSize):
-            self.walls[i] = self.VBORDER
-            self.walls[i + self.boardSize] = self.VBORDER
+            self.walls[i] = WallType.VERTICAL
+            self.walls[i + self.boardSize] = WallType.VERTICAL
+
+        # TODO: Fix
+        # A list of only the non-rim wall locations, for convenience
+        self.nonRimWalls = []
+        for v in xrange(self.numVertexes):
+            row = v / self.boardSize
+            col = v % self.boardSize
+            if row > 0 and col > 0 and row <= self.boardSize \
+                and col <= self.boardSize:
+                self.nonRimWalls.append(v)
 
         # Starting positions and starting number of walls to place
         p1 = self.boardSize / 2
@@ -67,13 +72,6 @@ class QuoridorGameState(object):
         # Move player in any of the 4 cardinal directions
 
         wallMoves = []
-        for i, w in enumerate(self.walls):
-            neighbors = self._getVertexNeighboringVertices(i)
-
-            vertexIsEmpty = w == self.EMPTY_WALL
-
-        #     if vertexIsEmpty and eastNeighborIsEmpty and westNeighborIsEmpty:
-        #         wallMoves.extend(['h' + str(i), 'v' + str(i)])
 
         # Determine pawn moves
         pawnMoves = []
@@ -81,19 +79,19 @@ class QuoridorGameState(object):
         pawnPosition = self.playerPositions[self.currentPlayer - 1]
         NW, NE, SW, SE = self._getCellNeighboringVertices(pawnPosition)
 
-        canMoveNorth = self.walls[NW] not in self.horizontalWalls and \
-                        self.walls[NE] not in self.horizontalWalls
-        canMoveSouth = self.walls[SW] not in self.horizontalWalls and \
-                        self.walls[SE] not in self.horizontalWalls
-        canMoveWest = self.walls[NW] not in self.verticalWalls and \
-                        self.walls[SW] not in self.verticalWalls
-        canMoveEast = self.walls[NE] not in self.verticalWalls and \
-                        self.walls[SE] not in self.verticalWalls
+        canMoveNorth = not self.walls[NW] & WallType.HORIZONTAL and \
+                        not self.walls[NE] & WallType.HORIZONTAL
+        canMoveSouth = not self.walls[SW] & WallType.HORIZONTAL and \
+                        not self.walls[SE] & WallType.HORIZONTAL
+        canMoveEast = not self.walls[NE] & WallType.VERTICAL and \
+                        not self.walls[SE] & WallType.VERTICAL
+        canMoveWest = not self.walls[NW] & WallType.VERTICAL and \
+                        not self.walls[SW] & WallType.VERTICAL
 
-        if canMoveNorth: pawnMoves.append('N')
-        if canMoveSouth: pawnMoves.append('S')
-        if canMoveWest: pawnMoves.append('W')
-        if canMoveEast: pawnMoves.append('E')
+        pawnMoves = [d for d, canMove in zip('NSEW',
+                                             [canMoveNorth, canMoveSouth,
+                                              canMoveEast, canMoveWest])
+                     if canMove]
 
         # TODO: Add the logic for jumping over players
         # Currently, players will be able to occupy the same spot
@@ -151,11 +149,11 @@ class QuoridorGameState(object):
 
         return neighbors
 
-    def _getCellNeighboringVertices(self, pos):
+    def _getCellNeighboringVertices(self, cell):
 
-        row = pos / self.boardSize
+        row = cell / self.boardSize
 
-        NW = pos + row
+        NW = cell + row
         NE = NW + 1
         SW = NW + self.vertexSize
         SE = SW + 1
@@ -167,7 +165,8 @@ def main():
 
     q = QuoridorGameState()
     print q.getLegalMoves()
-    print q._getVertexNeighboringVertices(0)
+    print q.nonRimWalls
+    # print q._getVertexNeighboringVertices(0)
 
     for i in xrange(0, len(q.walls), q.vertexSize):
         print str(i) + '-' + str(i+q.vertexSize) + ': ' + \
