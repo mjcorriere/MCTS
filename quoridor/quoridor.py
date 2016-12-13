@@ -32,25 +32,25 @@ class QuoridorGameState(object):
         # legal moves. Moving off the edge is no longer a corner case.
         self.walls[:self.vertexSize] = [WallType.HORIZONTAL] * self.vertexSize
         self.walls[-self.vertexSize:] = [WallType.HORIZONTAL] * self.vertexSize
+
         for i in xrange(self.vertexSize, self.numVertexes - self.vertexSize,
                             self.vertexSize):
             self.walls[i] = WallType.VERTICAL
             self.walls[i + self.boardSize] = WallType.VERTICAL
 
-        # TODO: Fix
         # A list of only the non-rim wall locations, for convenience
         self.nonRimWalls = []
         for v in xrange(self.numVertexes):
-            row = v / self.boardSize
-            col = v % self.boardSize
-            if row > 0 and col > 0 and row <= self.boardSize \
-                and col <= self.boardSize:
+            row = v / self.vertexSize
+            col = v % self.vertexSize
+            if row > 0 and col > 0 and row < self.vertexSize - 1 \
+                and col < self.vertexSize - 1:
                 self.nonRimWalls.append(v)
 
         # Starting positions and starting number of walls to place
-        p1 = self.boardSize / 2
-        p2 = self.boardSize * self.boardSize - self.boardSize / 2
-        self.playerPositions = [p1, p2]
+        player1Start = self.boardSize / 2
+        player2Start = self.boardSize * self.boardSize - self.boardSize / 2
+        self.playerPositions = [player1Start, player2Start]
 
         self.numPlayerWalls = [10, 10]
 
@@ -69,12 +69,29 @@ class QuoridorGameState(object):
         # Moves can be:
         # Place horizontal wall at position P 'hP'
         # Place vertical wall at position P 'vP'
-        # Move player in any of the 4 cardinal directions
+        # Move player in any of the 4 cardinal directions 'N', 'S', 'E', 'W'
 
         wallMoves = []
+        for v in self.nonRimWalls:
+            # There will always be N, S, E, W neighbors since we are only
+            # sampling the non-rim walls in the board
+            N, S, E, W = self._getVertexNeighboringVertices(v)
+
+            # I can place a vertical wall here if it is empty and there are no
+            # vertical walls above or below me
+            if not self.walls[N] & WallType.VERTICAL and \
+                not self.walls[S] & WallType.VERTICAL and \
+                    self.walls[v] == WallType.EMPTY:
+                wallMoves.append('v' + str(v))
+
+            # I can place a horizontal wall here if it is empty and there are
+            # no horizontal walls to the left or right of me
+            if not self.walls[E] & WallType.HORIZONTAL and \
+                not self.walls[W] & WallType.HORIZONTAL and \
+                    self.walls[v] == WallType.EMPTY:
+                wallMoves.append('h' + str(v))
 
         # Determine pawn moves
-        pawnMoves = []
 
         pawnPosition = self.playerPositions[self.currentPlayer - 1]
         NW, NE, SW, SE = self._getCellNeighboringVertices(pawnPosition)
@@ -102,14 +119,23 @@ class QuoridorGameState(object):
         return wallMoves + pawnMoves
 
     def executeMove(self, move):
+
+        # NOTE: The right thing to to is ensure the move is in the set of
+        # legal moves given by self.getLegalMoves(). However, for simulation
+        # speed, this method assumes the caller is playing by the rules.
+
         assert self.winner is None
 
         if move in 'NSEW':
             self.playerPositions[self.currentPlayer - 1] += self.distance[move]
         elif move[0] == 'h':
-            pass
+            position = int(move[1:])
+            self.walls[position] = self.currentPlayer + WallType.HORIZONTAL
+            self.numPlayerWalls[self.currentPlayer - 1] -= 1
         elif move[0] == 'v':
-            pass
+            position = int(move[1:])
+            self.walls[position] = self.currentPlayer + WallType.VERTICAL
+            self.numPlayerWalls[self.currentPlayer - 1] -= 1
         else:
             raise Exception("Invalid Move: ", str(move))
 
@@ -118,38 +144,43 @@ class QuoridorGameState(object):
 
     def checkForWin(self):
         p1, p2 = self.playerPositions[0], self.playerPositions[1]
-        if p1 < self.boardSize:
-            self.winner = p1
-        elif p2 >= self.boardSize**2 - self.boardSize:
-            self.winner = p2
+        if p1 >= self.boardSize**2 - self.boardSize:
+            self.winner = 1
+        elif p2 < self.boardSize:
+            self.winner = 2
 
     def _getVertexNeighboringVertices(self, vertex):
+        """
+        Returns a tuple of vertices that are cardinal neighbors of the given
+        vertex. The vertex must be a non-rim vertex. In this way, neighbors
+        are guaranteed to be within the board and in the same row, avoiding
+        these boundary checks.
+
+        The returned tuple contains the indices of the neighboring vertices,
+        in the order of N, S, E, W from the perspective of the given vertex.
+        """
 
         north = vertex - self.vertexSize
         south = vertex + self.vertexSize
         east = vertex + 1
         west = vertex - 1
 
-        # North and south are valid so long as they are within the board
-        northValid = north >= 0
-        southValid = south < self.numVertexes
+        # Sanity checks
+        assert north >= 0
+        assert west >= 0
+        assert east < self.numVertexes
+        assert south < self.numVertexes
 
-        # East and west are valid so long as they are in the same row as vertex
-        # and within the board
-        eastValid = vertex / self.vertexSize == east / self.vertexSize \
-                        and east < self.numVertexes
-        westValid = vertex / self.vertexSize == west / self.vertexSize \
-                        and west >= 0
-
-        directions = (north, south, east, west)
-        validMap = (northValid, southValid, eastValid, westValid)
-
-        neighbors = [directions[i] if valid is True else None
-                        for i, valid in enumerate(validMap)]
-
-        return neighbors
+        return north, south, east, west
 
     def _getCellNeighboringVertices(self, cell):
+        """
+        Returns a tuple of vertices that are neighbors of the given cell.
+        Cell vertex neighbors are the corners of the square cell.
+
+        The returned tuple contains the indices of the neighboring vertices in
+        the order of NW, NE, SW, SE from the perspective of the given cell.
+        """
 
         row = cell / self.boardSize
 
@@ -161,13 +192,28 @@ class QuoridorGameState(object):
         return NW, NE, SW, SE
 
 
+def testHorizontalWallPlacement():
+
+    q = QuoridorGameState()
+    q.executeMove('h11')
+    legalMoves = q.getLegalMoves()
+
+    # Test that it and its neighbor are no longer valid moves
+    assert 'h11' not in legalMoves
+    assert 'h12' not in legalMoves
+
+    # Test that a vertical wall can't be placed in the same spot
+    assert 'v11' not in legalMoves
+
+    # Test that a vertical wall can be placed below it
+    assert 'v21' in legalMoves
+
 def main():
+
+    testHorizontalWallPlacement()
 
     q = QuoridorGameState()
     print q.getLegalMoves()
-    print q.nonRimWalls
-    # print q._getVertexNeighboringVertices(0)
-
     for i in xrange(0, len(q.walls), q.vertexSize):
         print str(i) + '-' + str(i+q.vertexSize) + ': ' + \
               ' '.join(map(str, q.walls)[i:i+q.vertexSize])
