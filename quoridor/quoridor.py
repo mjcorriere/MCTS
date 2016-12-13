@@ -11,12 +11,13 @@ class WallType():
 
 class QuoridorGameState(object):
 
-    def __init__(self, size=9):
+    def __init__(self):
 
-        assert size % 2 == 1
+        # A board will be size x size cells square. Must be odd.
+        self.boardSize = 9
 
-        # A board will be size x size cells square
-        self.boardSize = size
+        # Sanity check on board size.
+        assert self.boardSize % 2 == 1
 
         # The number of vertices per side
         self.vertexSize = self.boardSize + 1
@@ -64,6 +65,16 @@ class QuoridorGameState(object):
             'E': 1,
             'W': -1
         }
+
+    def copy(self):
+        q = QuoridorGameState()
+        q.walls = list(self.walls)
+        q.playerPositions = list(self.playerPositions)
+        q.numPlayerWalls = list(self.numPlayerWalls)
+        q.currentPlayer = self.currentPlayer
+        q.winner = self.winner
+
+        return q
 
     def getLegalMoves(self):
         # Moves can be:
@@ -217,7 +228,6 @@ def main():
     for i in xrange(0, len(q.walls), q.vertexSize):
         print str(i) + '-' + str(i+q.vertexSize) + ': ' + \
               ' '.join(map(str, q.walls)[i:i+q.vertexSize])
-
 
 if __name__ == '__main__':
     main()
