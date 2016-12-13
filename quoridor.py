@@ -82,25 +82,28 @@ class QuoridorGameState(object):
         # Place vertical wall at position P 'vP'
         # Move player in any of the 4 cardinal directions 'N', 'S', 'E', 'W'
 
+        # Determine wall moves if the current player has walls to place
+
         wallMoves = []
-        for v in self.nonRimWalls:
-            # There will always be N, S, E, W neighbors since we are only
-            # sampling the non-rim walls in the board
-            N, S, E, W = self._getVertexNeighboringVertices(v)
+        if self.numPlayerWalls[self.currentPlayer - 1] > 0:
+            for v in self.nonRimWalls:
+                # There will always be N, S, E, W neighbors since we are only
+                # sampling the non-rim walls in the board
+                N, S, E, W = self._getVertexNeighboringVertices(v)
 
-            # I can place a vertical wall here if it is empty and there are no
-            # vertical walls above or below me
-            if not self.walls[N] & WallType.VERTICAL and \
-                not self.walls[S] & WallType.VERTICAL and \
-                    self.walls[v] == WallType.EMPTY:
-                wallMoves.append('v' + str(v))
+                # I can place a vertical wall here if it is empty and there are
+                # no vertical walls above or below me
+                if not self.walls[N] & WallType.VERTICAL and \
+                    not self.walls[S] & WallType.VERTICAL and \
+                        self.walls[v] == WallType.EMPTY:
+                    wallMoves.append('v' + str(v))
 
-            # I can place a horizontal wall here if it is empty and there are
-            # no horizontal walls to the left or right of me
-            if not self.walls[E] & WallType.HORIZONTAL and \
-                not self.walls[W] & WallType.HORIZONTAL and \
-                    self.walls[v] == WallType.EMPTY:
-                wallMoves.append('h' + str(v))
+                # I can place a horizontal wall here if it is empty and there
+                # are no horizontal walls to the left or right of me
+                if not self.walls[E] & WallType.HORIZONTAL and \
+                    not self.walls[W] & WallType.HORIZONTAL and \
+                        self.walls[v] == WallType.EMPTY:
+                    wallMoves.append('h' + str(v))
 
         # Determine pawn moves
 
