@@ -1,7 +1,7 @@
 from collections import deque
+import time
 
 __author__ = 'Markus'
-
 
 class WallType():
     EMPTY = 0
@@ -140,6 +140,7 @@ class QuoridorGameState(object):
         return cell >= 0 and cell < self.numCells
 
     def _doesWallBlockVictory(self, wall, wallType):
+        start = time.clock()
 
         self.walls[wall] = wallType
 
@@ -172,6 +173,10 @@ class QuoridorGameState(object):
             visited[current] = True
 
         self.walls[wall] = WallType.EMPTY
+
+        end = time.clock()
+        # print "Block Victory Check Time: ", str(end - start)
+
         return blocksVictory
 
     def executeMove(self, move):

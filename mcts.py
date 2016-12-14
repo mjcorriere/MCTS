@@ -74,13 +74,16 @@ def simulate(node):
 
     simulatedMoves = 0
 
-    start = time.clock()
+
     while gamestate.winner is None:
+        start = time.clock()
         legalMoves = gamestate.getLegalMoves()
+        end = time.clock()
+        print "Legal Move Time: ", str(end - start)
         move = random.choice(legalMoves)
         gamestate.executeMove(move)
         simulatedMoves += 1
-    end = time.clock()
+
     print "Simulated moves played: ", str(simulatedMoves)
 
     if gamestate.winner == 0:
