@@ -140,7 +140,6 @@ class QuoridorGameState(object):
         return cell >= 0 and cell < self.numCells
 
     def _doesWallBlockVictory(self, wall, wallType):
-        start = time.clock()
 
         self.walls[wall] = wallType
 
@@ -154,12 +153,16 @@ class QuoridorGameState(object):
 
         if opponent == 1:
             victoryCells = range(0, self.boardSize)
+            sortDescending = True
         elif opponent == 2:
             victoryCells = range(self.boardSize**2 - self.boardSize,
                                  self.boardSize**2)
+            sortDescending = False
+        else:
+            raise Exception("Invalid opponent")
 
         while len(frontier) > 0:
-            current = frontier.popleft()
+            current = frontier.pop()
             neighbors = [current + self.distance[d] for d in
                         self._getValidPawnMoves(current)
                         if self._isValidCell(current + self.distance[d])
@@ -169,13 +172,12 @@ class QuoridorGameState(object):
                 blocksVictory = False
                 break
 
+            neighbors.sort(reverse=sortDescending)
+
             frontier.extend(neighbors)
             visited[current] = True
 
         self.walls[wall] = WallType.EMPTY
-
-        end = time.clock()
-        # print "Block Victory Check Time: ", str(end - start)
 
         return blocksVictory
 
