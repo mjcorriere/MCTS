@@ -1,6 +1,7 @@
 __author__ = 'MQC1472'
 from math import sqrt, log
 import random
+import time
 
 class MCTSNode(object):
 
@@ -71,10 +72,16 @@ def simulate(node):
     gamestate = node.gamestate.copy()
     currentPlayer = gamestate.currentPlayer
 
+    simulatedMoves = 0
+
+    start = time.clock()
     while gamestate.winner is None:
         legalMoves = gamestate.getLegalMoves()
         move = random.choice(legalMoves)
         gamestate.executeMove(move)
+        simulatedMoves += 1
+    end = time.clock()
+    print "Simulated moves played: ", str(simulatedMoves)
 
     if gamestate.winner == 0:
         reward = 0
@@ -100,9 +107,23 @@ def mcts(root, iterations):
     i = 0
 
     while i < iterations:
+        print 'Iteration: ', str(i)
+
+        start = time.clock()
         node = select(root)
+        end = time.clock()
+        print "Selection time: ", str(end - start)
+
+        start = time.clock()
         reward = simulate(node)
+        end = time.clock()
+        print "Simulation time: ", str(end - start)
+
+        start = time.clock()
         backpropagate(node, reward)
+        end = time.clock()
+        print "Backprop time: ", str(end - start)
+
         i += 1
 
     best_move = root.selectBestMove()

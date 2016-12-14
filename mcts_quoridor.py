@@ -9,7 +9,7 @@ def playMCTSgame():
     node = root
 
     while q.winner is None:
-        move = mcts.mcts(node, 2000)
+        move = mcts.mcts(node, 10)
         q.executeMove(move)
         node = mcts.MCTSNode(q)
         print q
