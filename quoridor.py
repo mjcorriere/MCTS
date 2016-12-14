@@ -1,3 +1,5 @@
+from collections import deque
+
 __author__ = 'Markus'
 
 
@@ -15,6 +17,7 @@ class QuoridorGameState(object):
 
         # A board will be size x size cells square. Must be odd.
         self.boardSize = 9
+        self.numCells = self.boardSize**2
 
         # Sanity check on board size.
         assert self.boardSize % 2 == 1
@@ -49,8 +52,9 @@ class QuoridorGameState(object):
                 self.nonRimWalls.append(v)
 
         # Starting positions and starting number of walls to place
-        player1Start = self.boardSize / 2
-        player2Start = self.boardSize * self.boardSize - self.boardSize / 2
+        # Player 1 starts at center bottom, player 2 at center top
+        player1Start = self.boardSize * self.boardSize - self.boardSize / 2
+        player2Start = self.boardSize / 2
         self.playerPositions = [player1Start, player2Start]
 
         self.numPlayerWalls = [10, 10]
@@ -95,20 +99,29 @@ class QuoridorGameState(object):
                 # no vertical walls above or below me
                 if not self.walls[N] & WallType.VERTICAL and \
                     not self.walls[S] & WallType.VERTICAL and \
-                        self.walls[v] == WallType.EMPTY:
+                        self.walls[v] == WallType.EMPTY and \
+                        not self._doesWallBlockVictory(v, WallType.VERTICAL):
                     wallMoves.append('v' + str(v))
 
                 # I can place a horizontal wall here if it is empty and there
                 # are no horizontal walls to the left or right of me
                 if not self.walls[E] & WallType.HORIZONTAL and \
                     not self.walls[W] & WallType.HORIZONTAL and \
-                        self.walls[v] == WallType.EMPTY:
+                        self.walls[v] == WallType.EMPTY and \
+                        not self._doesWallBlockVictory(v, WallType.HORIZONTAL):
                     wallMoves.append('h' + str(v))
 
         # Determine pawn moves
-
         pawnPosition = self.playerPositions[self.currentPlayer - 1]
-        NW, NE, SW, SE = self._getCellNeighboringVertices(pawnPosition)
+        pawnMoves = self._getValidPawnMoves(pawnPosition)
+
+        # TODO: Add the logic for jumping over players
+        # Currently, players will be able to occupy the same spot
+
+        return wallMoves + pawnMoves
+
+    def _getValidPawnMoves(self, cell):
+        NW, NE, SW, SE = self._getCellNeighboringVertices(cell)
 
         canMoveNorth = not self.walls[NW] & WallType.HORIZONTAL and \
                         not self.walls[NE] & WallType.HORIZONTAL
@@ -119,18 +132,47 @@ class QuoridorGameState(object):
         canMoveWest = not self.walls[NW] & WallType.VERTICAL and \
                         not self.walls[SW] & WallType.VERTICAL
 
-        pawnMoves = [d for d, canMove in zip('NSEW',
-                                             [canMoveNorth, canMoveSouth,
-                                              canMoveEast, canMoveWest])
-                     if canMove]
+        return [d for d, canMove in zip('NSEW', [canMoveNorth, canMoveSouth,
+                                                 canMoveEast, canMoveWest])
+                if canMove]
 
-        # TODO: Add the logic for jumping over players
-        # Currently, players will be able to occupy the same spot
+    def _isValidCell(self, cell):
+        return cell >= 0 and cell < self.numCells
 
-        # TODO: Add logic for determining if a wall blocks a player from goal
-        # Use algorithm for determining percolation
+    def _doesWallBlockVictory(self, wall, wallType):
 
-        return wallMoves + pawnMoves
+        self.walls[wall] = wallType
+
+        visited = [False] * self.numCells
+        frontier = deque()
+
+        opponent = 3 - self.currentPlayer
+        root = self.playerPositions[opponent - 1]
+        frontier.append(root)
+        blocksVictory = True
+
+        if opponent == 1:
+            victoryCells = range(0, self.boardSize)
+        elif opponent == 2:
+            victoryCells = range(self.boardSize**2 - self.boardSize,
+                                 self.boardSize**2)
+
+        while len(frontier) > 0:
+            current = frontier.popleft()
+            neighbors = [current + self.distance[d] for d in
+                        self._getValidPawnMoves(current)
+                        if self._isValidCell(current + self.distance[d])
+                        and not visited[current + self.distance[d]]]
+
+            if any(n in victoryCells for n in neighbors):
+                blocksVictory = False
+                break
+
+            frontier.extend(neighbors)
+            visited[current] = True
+
+        self.walls[wall] = WallType.EMPTY
+        return blocksVictory
 
     def executeMove(self, move):
 
@@ -158,9 +200,9 @@ class QuoridorGameState(object):
 
     def checkForWin(self):
         p1, p2 = self.playerPositions[0], self.playerPositions[1]
-        if p1 >= self.boardSize**2 - self.boardSize:
+        if p1 < self.boardSize:
             self.winner = 1
-        elif p2 < self.boardSize:
+        elif p2 >= self.boardSize**2 - self.boardSize:
             self.winner = 2
 
     def _getVertexNeighboringVertices(self, vertex):
@@ -207,7 +249,7 @@ class QuoridorGameState(object):
 
 
 def testHorizontalWallPlacement():
-
+    print "TEST: testHorizontalWallPlacement()"
     q = QuoridorGameState()
     q.executeMove('h11')
     legalMoves = q.getLegalMoves()
@@ -222,15 +264,29 @@ def testHorizontalWallPlacement():
     # Test that a vertical wall can be placed below it
     assert 'v21' in legalMoves
 
+def testWallBlockingVictory():
+    print "TEST: testWallBlockingVictory()"
+
+    q = QuoridorGameState()
+    q.executeMove('h41')
+    q.executeMove('h43')
+    q.executeMove('h45')
+    q.executeMove('h47')
+    q.executeMove('v48')
+
+    assert 'h38' not in q.getLegalMoves()
+    assert 'h58' not in q.getLegalMoves()
+
 def main():
 
     testHorizontalWallPlacement()
+    testWallBlockingVictory()
 
-    q = QuoridorGameState()
-    print q.getLegalMoves()
-    for i in xrange(0, len(q.walls), q.vertexSize):
-        print str(i) + '-' + str(i+q.vertexSize) + ': ' + \
-              ' '.join(map(str, q.walls)[i:i+q.vertexSize])
+    # q = QuoridorGameState()
+    # print q.getLegalMoves()
+    # for i in xrange(0, len(q.walls), q.vertexSize):
+    #     print str(i) + '-' + str(i+q.vertexSize) + ': ' + \
+    #           ' '.join(map(str, q.walls)[i:i+q.vertexSize])
 
 if __name__ == '__main__':
     main()
