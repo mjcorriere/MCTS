@@ -74,17 +74,16 @@ def simulate(node):
 
     simulatedMoves = 0
 
-
     while gamestate.winner is None:
         start = time.clock()
         legalMoves = gamestate.getLegalMoves()
         end = time.clock()
-        print "Legal Move Time: ", str(end - start)
+        # print "Legal Move Time: ", str(end - start)
         move = random.choice(legalMoves)
         gamestate.executeMove(move)
         simulatedMoves += 1
 
-    print "Simulated moves played: ", str(simulatedMoves)
+    # print "Simulated moves played: ", str(simulatedMoves)
 
     if gamestate.winner == 0:
         reward = 0
@@ -110,22 +109,22 @@ def mcts(root, iterations):
     i = 0
 
     while i < iterations:
-        print 'Iteration: ', str(i)
+        # print 'Iteration: ', str(i)
 
         start = time.clock()
         node = select(root)
         end = time.clock()
-        print "Selection time: ", str(end - start)
+        # print "Selection time: ", str(end - start)
 
         start = time.clock()
         reward = simulate(node)
         end = time.clock()
-        print "Simulation time: ", str(end - start)
+        # print "Simulation time: ", str(end - start)
 
         start = time.clock()
         backpropagate(node, reward)
         end = time.clock()
-        print "Backprop time: ", str(end - start)
+        # print "Backprop time: ", str(end - start)
 
         i += 1
 
