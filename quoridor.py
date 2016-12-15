@@ -254,6 +254,49 @@ class QuoridorGameState(object):
 
         return NW, NE, SW, SE
 
+    def __repr__(self):
+        h_wall = '--'
+        h_wall_empty = '  '
+        v_wall_empty = ' '
+        v_wall = '|'
+        cell_empty = '  '
+        vertex = '+'
+        player1 = 'p1'
+        player2 = 'p2'
+
+        terminalRow = [vertex, h_wall_empty] * self.boardSize + [vertex, '\n']
+
+        empty_h_row = [vertex, h_wall_empty] * self.boardSize + [vertex, '\n']
+        empty_v_row = [v_wall_empty, cell_empty] * self.boardSize + [v_wall_empty, '\n']
+
+        board = []
+        for _ in xrange(self.boardSize):
+            board.append(list(empty_h_row))
+            board.append(list(empty_v_row))
+        board.append(empty_h_row)
+
+        for v in xrange(self.numVertexes):
+            row = v / self.vertexSize
+            col = v % self.vertexSize
+
+            # If a player placed the wall, draw it
+            if self.walls[v] & WallType.PLAYER1 or self.walls[v] & WallType.PLAYER2:
+                if self.walls[v] & WallType.HORIZONTAL:
+                    board[2 * row][col * 2 - 1] = h_wall
+                    board[2 * row][col * 2 + 1] = h_wall
+                elif self.walls[v] & WallType.VERTICAL:
+                    board[row * 2 - 1][col * 2] = v_wall
+                    board[row * 2 + 1][col * 2] = v_wall
+
+        p1row = self.playerPositions[0] / self.boardSize
+        p2row = self.playerPositions[1] / self.boardSize
+        p1col = self.playerPositions[0] % self.boardSize
+        p2col = self.playerPositions[0] % self.boardSize
+
+        board[p1row * 2 + 1][p1col * 2 - 1] = player1
+        board[p2row * 2 + 1][p2col * 2 - 1] = player2
+
+        return ''.join(map(''.join, board))
 
 def testHorizontalWallPlacement():
     print "TEST: testHorizontalWallPlacement()"
@@ -284,10 +327,21 @@ def testWallBlockingVictory():
     assert 'h38' not in q.getLegalMoves()
     assert 'h58' not in q.getLegalMoves()
 
+def testPrintBoard():
+    q = QuoridorGameState()
+    q.executeMove('h24')
+    q.executeMove('v25')
+    q.executeMove('h11')
+    q.executeMove('h13')
+    q.executeMove('N')
+    q.executeMove('S')
+    print q
+
 def main():
 
     testHorizontalWallPlacement()
     testWallBlockingVictory()
+    testPrintBoard()
 
     # q = QuoridorGameState()
     # print q.getLegalMoves()
