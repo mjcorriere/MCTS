@@ -53,7 +53,7 @@ class QuoridorGameState(object):
 
         # Starting positions and starting number of walls to place
         # Player 1 starts at center bottom, player 2 at center top
-        player1Start = self.boardSize * self.boardSize - self.boardSize / 2
+        player1Start = self.boardSize * self.boardSize - self.boardSize / 2 - 1
         player2Start = self.boardSize / 2
         self.playerPositions = [player1Start, player2Start]
 
@@ -264,8 +264,6 @@ class QuoridorGameState(object):
         player1 = 'p1'
         player2 = 'p2'
 
-        terminalRow = [vertex, h_wall_empty] * self.boardSize + [vertex, '\n']
-
         empty_h_row = [vertex, h_wall_empty] * self.boardSize + [vertex, '\n']
         empty_v_row = [v_wall_empty, cell_empty] * self.boardSize + [v_wall_empty, '\n']
 
@@ -291,10 +289,10 @@ class QuoridorGameState(object):
         p1row = self.playerPositions[0] / self.boardSize
         p2row = self.playerPositions[1] / self.boardSize
         p1col = self.playerPositions[0] % self.boardSize
-        p2col = self.playerPositions[0] % self.boardSize
+        p2col = self.playerPositions[1] % self.boardSize
 
-        board[p1row * 2 + 1][p1col * 2 - 1] = player1
-        board[p2row * 2 + 1][p2col * 2 - 1] = player2
+        board[p1row * 2 + 1][p1col * 2 + 1] = player1
+        board[p2row * 2 + 1][p2col * 2 + 1] = player2
 
         return ''.join(map(''.join, board))
 
@@ -337,11 +335,26 @@ def testPrintBoard():
     q.executeMove('S')
     print q
 
+def playGame():
+    q = QuoridorGameState()
+    move = ''
+    while move != 'q' or q.winner is None:
+        print q
+        move = raw_input('Enter Move: ')
+        if move in q.getLegalMoves():
+            q.executeMove(move)
+        else:
+            print 'Invalid move: ', move
+
+    print "Winner: ", q.winner
+
+
 def main():
 
-    testHorizontalWallPlacement()
-    testWallBlockingVictory()
-    testPrintBoard()
+    # testHorizontalWallPlacement()
+    # testWallBlockingVictory()
+    # testPrintBoard()
+    playGame()
 
     # q = QuoridorGameState()
     # print q.getLegalMoves()
