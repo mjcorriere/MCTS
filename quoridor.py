@@ -142,41 +142,50 @@ class QuoridorGameState(object):
 
     def _doesWallBlockVictory(self, wall, wallType):
 
+        iterations = 0
+
         self.walls[wall] = wallType
 
-        visited = [False] * self.numCells
-        frontier = deque()
+        if not self._doesWallTouchAnotherWall(wall):
+            blocksVictory = False
 
-        opponent = 3 - self.currentPlayer
-        root = self.playerPositions[opponent - 1]
-        frontier.append(root)
-        blocksVictory = True
-
-        if opponent == 1:
-            victoryCells = range(0, self.boardSize)
-            sortDescending = True
-        elif opponent == 2:
-            victoryCells = range(self.boardSize**2 - self.boardSize,
-                                 self.boardSize**2)
-            sortDescending = False
         else:
-            raise Exception("Invalid opponent")
+            visited = [False] * self.numCells
+            frontier = deque()
 
-        while len(frontier) > 0:
-            current = frontier.pop()
-            neighbors = [current + self.distance[d] for d in
-                        self._getValidPawnMoves(current)
-                        if self._isValidCell(current + self.distance[d])
-                        and not visited[current + self.distance[d]]]
+            opponent = 3 - self.currentPlayer
+            root = self.playerPositions[opponent - 1]
+            frontier.append(root)
+            blocksVictory = True
 
-            if any(n in victoryCells for n in neighbors):
-                blocksVictory = False
-                break
+            if opponent == 1:
+                victoryCells = range(0, self.boardSize)
+                sortDescending = True
+            elif opponent == 2:
+                victoryCells = range(self.boardSize**2 - self.boardSize,
+                                     self.boardSize**2)
+                sortDescending = False
+            else:
+                raise Exception("Invalid opponent")
 
-            neighbors.sort(reverse=sortDescending)
+            while len(frontier) > 0:
+                current = frontier.pop()
+                neighbors = [current + self.distance[d] for d in
+                            self._getValidPawnMoves(current)
+                            if self._isValidCell(current + self.distance[d])
+                            and not visited[current + self.distance[d]]]
 
-            frontier.extend(neighbors)
-            visited[current] = True
+                if any(n in victoryCells for n in neighbors):
+                    blocksVictory = False
+                    break
+
+                neighbors.sort(reverse=sortDescending)
+
+                frontier.extend(neighbors)
+                visited[current] = True
+                iterations += 1
+
+        # print "DFS iterations: ", str(iterations)
 
         self.walls[wall] = WallType.EMPTY
 
@@ -212,6 +221,36 @@ class QuoridorGameState(object):
             self.winner = 1
         elif p2 >= self.boardSize**2 - self.boardSize:
             self.winner = 2
+
+    def _doesWallTouchAnotherWall(self, wall):
+        # TODO: This should check to see if we touch TWO other walls
+        # The only way to close off a path is if a new wall makes contact
+        # with more than one other wall.
+        # More sophisticated versions of this would be to keep track of
+        # chains of walls, and only make the DFS check if a chain is closed
+
+        N, S, E, W = self._getVertexNeighboringVertices(wall)
+        N2 = N + self.distance['N']
+        S2 = S + self.distance['S']
+        E2 = E + self.distance['E']
+        W2 = W + self.distance['W']
+        NE = N + self.distance['E']
+        NW = N + self.distance['W']
+        SE = S + self.distance['E']
+        SW = S + self.distance['W']
+
+        if self._isHorizontalWall(wall):
+            return self._isVerticalWall(NW) or self._isVerticalWall(N) \
+                or self._isVerticalWall(NE) or self._isVerticalWall(SW) \
+                or self._isVerticalWall(S) or self._isVerticalWall(SE) \
+                or self._isVerticalWall(W) or self._isVerticalWall(E) \
+                or self._isHorizontalWall(W2) or self._isHorizontalWall(E2)
+        elif self._isVerticalWall(wall):
+            return self._isHorizontalWall(NW) or self._isHorizontalWall(N) \
+                or self._isHorizontalWall(NE) or self._isHorizontalWall(SW) \
+                or self._isHorizontalWall(S) or self._isHorizontalWall(SE) \
+                or self._isHorizontalWall(W) or self._isHorizontalWall(E) \
+                or self._isVerticalWall(N2) or self._isVerticalWall(S2)
 
     def _getVertexNeighboringVertices(self, vertex):
         """
@@ -254,6 +293,17 @@ class QuoridorGameState(object):
         SE = SW + 1
 
         return NW, NE, SW, SE
+
+    def _isVerticalWall(self, wall):
+        if wall < 0 or wall >= self.numVertexes:
+            return False
+        return self.walls[wall] & WallType.VERTICAL
+
+    def _isHorizontalWall(self, wall):
+        if wall < 0 or wall >= self.numVertexes:
+            return False
+
+        return self.walls[wall] & WallType.HORIZONTAL
 
     def __repr__(self):
         h_wall = '--'
@@ -352,7 +402,7 @@ def playGame():
 def testGamesPerSecond():
     gameNo = 0
     playTimes = []
-    while gameNo < 1000:
+    while gameNo < 100:
         gameNo += 1
         q = QuoridorGameState()
         start = time.clock()
@@ -371,6 +421,7 @@ def testGamesPerSecond():
     print 'Average play time: ',str(avgPlayTime)
     print 'Max play time: ', str(max(playTimes))
     print 'Games per second: ', str(gamesPerSec)
+
 def main():
 
     # testHorizontalWallPlacement()
