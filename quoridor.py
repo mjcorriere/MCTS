@@ -1,6 +1,7 @@
 from collections import deque
 import time
 import random
+import numpy as np
 
 __author__ = 'Markus'
 
@@ -32,11 +33,20 @@ class QuoridorGameState(object):
         # Walls will be stored at the vertices. Horizontal and vertical edges
         # are kept separately to simplify the representation
         self.walls = [WallType.EMPTY] * self.numVertexes
+        self.walls_n = np.full(self.numVertexes,
+                               WallType.EMPTY, dtype=int)
 
         # Add walls to the rim of the board. This is useful to simplify finding
         # legal moves. Moving off the edge is no longer a corner case.
         self.walls[:self.vertexSize] = [WallType.HORIZONTAL] * self.vertexSize
         self.walls[-self.vertexSize:] = [WallType.HORIZONTAL] * self.vertexSize
+
+        self.walls_n[:self.vertexSize] = WallType.HORIZONTAL
+        self.walls_n[-self.vertexSize:] = WallType.HORIZONTAL
+        self.walls_n.reshape((self.vertexSize, self.vertexSize))[1:self.vertexSize - 1, 0] = 8
+        self.walls_n.reshape((self.vertexSize, self.vertexSize))[1:self.vertexSize - 1, self.vertexSize - 1] = 8
+
+        print self.walls_n.reshape((self.vertexSize, self.vertexSize))
 
         for i in xrange(self.vertexSize, self.numVertexes - self.vertexSize,
                             self.vertexSize):
@@ -74,6 +84,7 @@ class QuoridorGameState(object):
     def copy(self):
         q = QuoridorGameState()
         q.walls = list(self.walls)
+        q.walls_n = np.copy(self.walls_n)
         q.playerPositions = list(self.playerPositions)
         q.numPlayerWalls = list(self.numPlayerWalls)
         q.currentPlayer = self.currentPlayer
