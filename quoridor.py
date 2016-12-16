@@ -1,5 +1,6 @@
 from collections import deque
 import time
+import random
 
 __author__ = 'Markus'
 
@@ -348,13 +349,35 @@ def playGame():
 
     print "Winner: ", q.winner
 
+def testGamesPerSecond():
+    gameNo = 0
+    playTimes = []
+    while gameNo < 1000:
+        gameNo += 1
+        q = QuoridorGameState()
+        start = time.clock()
+        while q.winner is None:
+            move = random.choice(q.getLegalMoves())
+            q.executeMove(move)
+        end = time.clock()
+        playTimes.append(end - start)
+        print '.',
+        if gameNo % 50 == 0:
+            print '\n'
 
+    avgPlayTime = float(sum(playTimes)) / float(len(playTimes))
+    gamesPerSec = 1.0 / avgPlayTime
+    print '\n\n'
+    print 'Average play time: ',str(avgPlayTime)
+    print 'Max play time: ', str(max(playTimes))
+    print 'Games per second: ', str(gamesPerSec)
 def main():
 
     # testHorizontalWallPlacement()
     # testWallBlockingVictory()
     # testPrintBoard()
-    playGame()
+    # playGame()
+    testGamesPerSecond()
 
     # q = QuoridorGameState()
     # print q.getLegalMoves()
