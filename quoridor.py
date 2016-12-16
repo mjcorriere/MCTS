@@ -46,8 +46,6 @@ class QuoridorGameState(object):
         self.walls_n.reshape((self.vertexSize, self.vertexSize))[1:self.vertexSize - 1, 0] = 8
         self.walls_n.reshape((self.vertexSize, self.vertexSize))[1:self.vertexSize - 1, self.vertexSize - 1] = 8
 
-        print self.walls_n.reshape((self.vertexSize, self.vertexSize))
-
         for i in xrange(self.vertexSize, self.numVertexes - self.vertexSize,
                             self.vertexSize):
             self.walls[i] = WallType.VERTICAL
@@ -98,8 +96,49 @@ class QuoridorGameState(object):
         # Place vertical wall at position P 'vP'
         # Move player in any of the 4 cardinal directions 'N', 'S', 'E', 'W'
 
-        # Determine wall moves if the current player has walls to place
+        wallMoves = self._getValidWallMoves()
+        # Determine pawn moves
+        pawnPosition = self.playerPositions[self.currentPlayer - 1]
+        pawnMoves = self._getValidPawnMoves(pawnPosition)
 
+        # TODO: Add the logic for jumping over players
+        # Currently, players will be able to occupy the same spot
+
+        return wallMoves + pawnMoves
+
+    def executeMove(self, move):
+
+        # NOTE: The right thing to to is ensure the move is in the set of
+        # legal moves given by self.getLegalMoves(). However, for simulation
+        # speed, this method assumes the caller is playing by the rules.
+
+        assert self.winner is None
+
+        if move in 'NSEW':
+            self.playerPositions[self.currentPlayer - 1] += self.distance[move]
+        elif move[0] == 'h':
+            position = int(move[1:])
+            self.walls[position] = self.currentPlayer + WallType.HORIZONTAL
+            self.numPlayerWalls[self.currentPlayer - 1] -= 1
+        elif move[0] == 'v':
+            position = int(move[1:])
+            self.walls[position] = self.currentPlayer + WallType.VERTICAL
+            self.numPlayerWalls[self.currentPlayer - 1] -= 1
+        else:
+            raise Exception("Invalid Move: ", str(move))
+
+        self.checkForWin()
+        self.currentPlayer = 3 - self.currentPlayer
+
+    def checkForWin(self):
+        p1, p2 = self.playerPositions[0], self.playerPositions[1]
+        if p1 < self.boardSize:
+            self.winner = 1
+        elif p2 >= self.boardSize**2 - self.boardSize:
+            self.winner = 2
+
+    def _getValidWallMoves(self):
+        # Determine wall moves if the current player has walls to place
         wallMoves = []
         if self.numPlayerWalls[self.currentPlayer - 1] > 0:
             for v in self.nonRimWalls:
@@ -123,14 +162,7 @@ class QuoridorGameState(object):
                         not self._doesWallBlockVictory(v, WallType.HORIZONTAL):
                     wallMoves.append('h' + str(v))
 
-        # Determine pawn moves
-        pawnPosition = self.playerPositions[self.currentPlayer - 1]
-        pawnMoves = self._getValidPawnMoves(pawnPosition)
-
-        # TODO: Add the logic for jumping over players
-        # Currently, players will be able to occupy the same spot
-
-        return wallMoves + pawnMoves
+        return wallMoves
 
     def _getValidPawnMoves(self, cell):
         NW, NE, SW, SE = self._getCellNeighboringVertices(cell)
@@ -201,37 +233,6 @@ class QuoridorGameState(object):
         self.walls[wall] = WallType.EMPTY
 
         return blocksVictory
-
-    def executeMove(self, move):
-
-        # NOTE: The right thing to to is ensure the move is in the set of
-        # legal moves given by self.getLegalMoves(). However, for simulation
-        # speed, this method assumes the caller is playing by the rules.
-
-        assert self.winner is None
-
-        if move in 'NSEW':
-            self.playerPositions[self.currentPlayer - 1] += self.distance[move]
-        elif move[0] == 'h':
-            position = int(move[1:])
-            self.walls[position] = self.currentPlayer + WallType.HORIZONTAL
-            self.numPlayerWalls[self.currentPlayer - 1] -= 1
-        elif move[0] == 'v':
-            position = int(move[1:])
-            self.walls[position] = self.currentPlayer + WallType.VERTICAL
-            self.numPlayerWalls[self.currentPlayer - 1] -= 1
-        else:
-            raise Exception("Invalid Move: ", str(move))
-
-        self.checkForWin()
-        self.currentPlayer = 3 - self.currentPlayer
-
-    def checkForWin(self):
-        p1, p2 = self.playerPositions[0], self.playerPositions[1]
-        if p1 < self.boardSize:
-            self.winner = 1
-        elif p2 >= self.boardSize**2 - self.boardSize:
-            self.winner = 2
 
     def _doesWallTouchAnotherWall(self, wall):
         # TODO: This should check to see if we touch TWO other walls
@@ -358,6 +359,7 @@ class QuoridorGameState(object):
 
         return ''.join(map(''.join, board))
 
+
 def testHorizontalWallPlacement():
     print "TEST: testHorizontalWallPlacement()"
     q = QuoridorGameState()
@@ -374,6 +376,7 @@ def testHorizontalWallPlacement():
     # Test that a vertical wall can be placed below it
     assert 'v21' in legalMoves
 
+
 def testWallBlockingVictory():
     print "TEST: testWallBlockingVictory()"
 
@@ -387,6 +390,7 @@ def testWallBlockingVictory():
     assert 'h38' not in q.getLegalMoves()
     assert 'h58' not in q.getLegalMoves()
 
+
 def testPrintBoard():
     q = QuoridorGameState()
     q.executeMove('h24')
@@ -396,6 +400,7 @@ def testPrintBoard():
     q.executeMove('N')
     q.executeMove('S')
     print q
+
 
 def playGame():
     q = QuoridorGameState()
@@ -409,6 +414,7 @@ def playGame():
             print 'Invalid move: ', move
 
     print "Winner: ", q.winner
+
 
 def testGamesPerSecond():
     gameNo = 0
@@ -432,6 +438,7 @@ def testGamesPerSecond():
     print 'Average play time: ',str(avgPlayTime)
     print 'Max play time: ', str(max(playTimes))
     print 'Games per second: ', str(gamesPerSec)
+
 
 def main():
 
