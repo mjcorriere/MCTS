@@ -60,6 +60,9 @@ class QuoridorGameState(object):
                 and col < self.vertexSize - 1:
                 self.nonRimWalls.append(v)
 
+        # Temporary
+        self.nonRimWalls_n = np.array(self.nonRimWalls, dtype=int)
+
         # Starting positions and starting number of walls to place
         # Player 1 starts at center bottom, player 2 at center top
         player1Start = self.boardSize * self.boardSize - self.boardSize / 2 - 1
@@ -144,6 +147,7 @@ class QuoridorGameState(object):
             for v in self.nonRimWalls:
                 # There will always be N, S, E, W neighbors since we are only
                 # sampling the non-rim walls in the board
+                # TODO: This should be replaced with a look-up table for speed
                 N, S, E, W = self._getVertexNeighboringVertices(v)
 
                 # I can place a vertical wall here if it is empty and there are
@@ -265,6 +269,7 @@ class QuoridorGameState(object):
                 or self._isVerticalWall(N2) or self._isVerticalWall(S2)
 
     def _getVertexNeighboringVertices(self, vertex):
+        # TODO: Replace this with a look-up table (adjacency list)
         """
         Returns a tuple of vertices that are cardinal neighbors of the given
         vertex. The vertex must be a non-rim vertex. In this way, neighbors
@@ -289,6 +294,7 @@ class QuoridorGameState(object):
         return north, south, east, west
 
     def _getCellNeighboringVertices(self, cell):
+        # TODO: Replace this with a look-up table (adjacency list)
         """
         Returns a tuple of vertices that are neighbors of the given cell.
         Cell vertex neighbors are the corners of the square cell.
