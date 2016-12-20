@@ -1,7 +1,6 @@
 from collections import deque
 import time
 import random
-import numpy as np
 
 __author__ = 'Markus'
 
@@ -33,18 +32,11 @@ class QuoridorGameState(object):
         # Walls will be stored at the vertices. Horizontal and vertical edges
         # are kept separately to simplify the representation
         self.walls = [WallType.EMPTY] * self.numVertexes
-        self.walls_n = np.full(self.numVertexes,
-                               WallType.EMPTY, dtype=int)
 
         # Add walls to the rim of the board. This is useful to simplify finding
         # legal moves. Moving off the edge is no longer a corner case.
         self.walls[:self.vertexSize] = [WallType.HORIZONTAL] * self.vertexSize
         self.walls[-self.vertexSize:] = [WallType.HORIZONTAL] * self.vertexSize
-
-        self.walls_n[:self.vertexSize] = WallType.HORIZONTAL
-        self.walls_n[-self.vertexSize:] = WallType.HORIZONTAL
-        self.walls_n.reshape((self.vertexSize, self.vertexSize))[1:self.vertexSize - 1, 0] = 8
-        self.walls_n.reshape((self.vertexSize, self.vertexSize))[1:self.vertexSize - 1, self.vertexSize - 1] = 8
 
         for i in xrange(self.vertexSize, self.numVertexes - self.vertexSize,
                             self.vertexSize):
@@ -60,8 +52,7 @@ class QuoridorGameState(object):
                 and col < self.vertexSize - 1:
                 self.nonRimWalls.append(v)
 
-        # Temporary
-        self.nonRimWalls_n = np.array(self.nonRimWalls, dtype=int)
+        self._createCellVertexAdjacencyList()
 
         # Starting positions and starting number of walls to place
         # Player 1 starts at center bottom, player 2 at center top
@@ -85,7 +76,6 @@ class QuoridorGameState(object):
     def copy(self):
         q = QuoridorGameState()
         q.walls = list(self.walls)
-        q.walls_n = np.copy(self.walls_n)
         q.playerPositions = list(self.playerPositions)
         q.numPlayerWalls = list(self.numPlayerWalls)
         q.currentPlayer = self.currentPlayer
@@ -169,7 +159,7 @@ class QuoridorGameState(object):
         return wallMoves
 
     def _getValidPawnMoves(self, cell):
-        NW, NE, SW, SE = self._getCellNeighboringVertices(cell)
+        NW, NE, SW, SE = self.cellVertexAdjacencyList[cell]
 
         canMoveNorth = not self.walls[NW] & WallType.HORIZONTAL and \
                         not self.walls[NE] & WallType.HORIZONTAL
@@ -311,6 +301,12 @@ class QuoridorGameState(object):
         SE = SW + 1
 
         return NW, NE, SW, SE
+
+    def _createCellVertexAdjacencyList(self):
+        self.cellVertexAdjacencyList = []
+        for cell in xrange(self.numCells):
+            self.cellVertexAdjacencyList.append(
+                list(self._getCellNeighboringVertices(cell)))
 
     def _isVerticalWall(self, wall):
         if wall < 0 or wall >= self.numVertexes:
