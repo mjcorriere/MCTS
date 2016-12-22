@@ -1,6 +1,6 @@
-from collections import deque
 import time
 import random
+from collections import deque, OrderedDict
 
 __author__ = 'Markus'
 
@@ -52,7 +52,21 @@ class QuoridorGameState(object):
                 and col < self.vertexSize - 1:
                 self.nonRimWalls.append(v)
 
+        # The movement map
+        self.distance = OrderedDict([
+            ('N', -self.boardSize),
+            ('S', self.boardSize),
+            ('E', 1),
+            ('W', -1),
+        ])
+
+        # Static relationships about the board
         self._createCellVertexAdjacencyList()
+        # TODO: self._createVertexVertexGraph()
+        # TODO: self._createVertexCellGraph
+
+        # Dynamic relationship about the board
+        self._createCellGraph()
 
         # Starting positions and starting number of walls to place
         # Player 1 starts at center bottom, player 2 at center top
@@ -65,13 +79,6 @@ class QuoridorGameState(object):
         self.currentPlayer = 1
         self.winner = None
 
-        # The movement map
-        self.distance = {
-            'N': -self.boardSize,
-            'S': self.boardSize,
-            'E': 1,
-            'W': -1
-        }
 
     def copy(self):
         q = QuoridorGameState()
@@ -110,13 +117,45 @@ class QuoridorGameState(object):
         if move in 'NSEW':
             self.playerPositions[self.currentPlayer - 1] += self.distance[move]
         elif move[0] == 'h':
+
             position = int(move[1:])
+
+            # Update the wall list and reduce the walls for that player
             self.walls[position] = self.currentPlayer + WallType.HORIZONTAL
             self.numPlayerWalls[self.currentPlayer - 1] -= 1
+
+            # Remove the edges from the graph that have been blocked by the wall
+            cellNeighbors = self._getVertexNeighboringCells(position)
+            assert len(cellNeighbors) == 4
+
+            cellNeighbors.sort()
+            NW, NE, SW, SE = cellNeighbors
+
+            self.cellGraph[NW].remove(SW)
+            self.cellGraph[SW].remove(NW)
+            self.cellGraph[NE].remove(SE)
+            self.cellGraph[SE].remove(NE)
+
         elif move[0] == 'v':
+
             position = int(move[1:])
+
+            # Update the wall list and reduce the walls for that player
             self.walls[position] = self.currentPlayer + WallType.VERTICAL
             self.numPlayerWalls[self.currentPlayer - 1] -= 1
+
+            # Remove the edges from the graph that have been blocked by the wall
+            cellNeighbors = self._getVertexNeighboringCells(position)
+            assert len(cellNeighbors) == 4
+
+            cellNeighbors.sort()
+            NW, NE, SW, SE = cellNeighbors
+
+            self.cellGraph[NW].remove(NE)
+            self.cellGraph[NE].remove(NW)
+            self.cellGraph[SW].remove(SE)
+            self.cellGraph[SE].remove(SW)
+
         else:
             raise Exception("Invalid Move: ", str(move))
 
@@ -129,6 +168,21 @@ class QuoridorGameState(object):
             self.winner = 1
         elif p2 >= self.boardSize**2 - self.boardSize:
             self.winner = 2
+
+    def _createCellGraph(self):
+        self.cellGraph = []
+        for cell in xrange(self.numCells):
+            neighbors = []
+            N, S, E, W = [cell + d for d in self.distance.itervalues()]
+            if self._isValidCell(N):
+                neighbors.append(N)
+            if self._isValidCell(S):
+                neighbors.append(S)
+            if self._isValidCell(E) and self._inSameRow(cell, E):
+                neighbors.append(E)
+            if self._isValidCell(W) and self._inSameRow(cell, W):
+                neighbors.append(W)
+            self.cellGraph.append(sorted(neighbors))
 
     def _getValidWallMoves(self):
         # Determine wall moves if the current player has walls to place
@@ -176,6 +230,9 @@ class QuoridorGameState(object):
 
     def _isValidCell(self, cell):
         return cell >= 0 and cell < self.numCells
+
+    def _inSameRow(self, cell1, cell2):
+        return cell1 / self.boardSize == cell2 / self.boardSize
 
     def _doesWallBlockVictory(self, wall, wallType):
 
@@ -302,6 +359,33 @@ class QuoridorGameState(object):
 
         return NW, NE, SW, SE
 
+    def _getVertexNeighboringCells(self, vertex):
+
+        neighbors = []
+
+        vertexRow = vertex / self.vertexSize
+        vertexCol = vertex % self.vertexSize
+
+        SE = vertex - vertexRow
+        SEcol = SE % self.boardSize
+        SW = SE - 1
+        SWcol = SW % self.boardSize
+        NE = SE - self.boardSize
+        NEcol = NE % self.boardSize
+        NW = NE - 1
+        NWcol = NW % self.boardSize
+
+        if SEcol == vertexCol and self._isValidCell(SE):
+            neighbors.append(SE)
+        if SWcol == vertexCol - 1 and self._isValidCell(SW):
+            neighbors.append(SW)
+        if NEcol == vertexCol and self._isValidCell(NE):
+            neighbors.append(NE)
+        if NWcol == vertexCol - 1 and self._isValidCell(NW):
+            neighbors.append(NW)
+
+        return neighbors
+
     def _createCellVertexAdjacencyList(self):
         self.cellVertexAdjacencyList = []
         for cell in xrange(self.numCells):
@@ -378,7 +462,6 @@ def testHorizontalWallPlacement():
     # Test that a vertical wall can be placed below it
     assert 'v21' in legalMoves
 
-
 def testWallBlockingVictory():
     print "TEST: testWallBlockingVictory()"
 
@@ -392,7 +475,6 @@ def testWallBlockingVictory():
     assert 'h38' not in q.getLegalMoves()
     assert 'h58' not in q.getLegalMoves()
 
-
 def testPrintBoard():
     q = QuoridorGameState()
     q.executeMove('h24')
@@ -403,6 +485,17 @@ def testPrintBoard():
     q.executeMove('S')
     print q
 
+def testValidPawnMovesTiming():
+    q = QuoridorGameState()
+
+    times = []
+    for _ in xrange(10):
+        start = time.clock()
+        q._getValidPawnMoves(25)
+        times.append(time.clock() - start)
+
+    print "Average time: ", str(float(sum(times)) / float(len(times)))
+    print "Max time: ", str(max(times))
 
 def playGame():
     q = QuoridorGameState()
@@ -416,7 +509,6 @@ def playGame():
             print 'Invalid move: ', move
 
     print "Winner: ", q.winner
-
 
 def testGamesPerSecond():
     gameNo = 0
@@ -441,6 +533,31 @@ def testGamesPerSecond():
     print 'Max play time: ', str(max(playTimes))
     print 'Games per second: ', str(gamesPerSec)
 
+def testVertexNeighboringCells():
+    q = QuoridorGameState()
+    neighbors = sorted(q._getVertexNeighboringCells(24))
+    assert neighbors == [12, 13, 21, 22]
+
+    neighbors = sorted(q._getVertexNeighboringCells(0))
+    assert neighbors == [0]
+
+    neighbors = sorted(q._getVertexNeighboringCells(9))
+    assert neighbors == [8]
+
+def testNeighborRemoval():
+    q = QuoridorGameState()
+
+    q.executeMove('h23')
+    assert 20 not in q.cellGraph[11]
+    assert 11 not in q.cellGraph[20]
+    assert 21 not in q.cellGraph[12]
+    assert 12 not in q.cellGraph[21]
+
+    q.executeMove('v15')
+    assert 4 not in q.cellGraph[5]
+    assert 5 not in q.cellGraph[4]
+    assert 13 not in q.cellGraph[14]
+    assert 14 not in q.cellGraph[13]
 
 def main():
 
@@ -448,7 +565,10 @@ def main():
     # testWallBlockingVictory()
     # testPrintBoard()
     # playGame()
-    testGamesPerSecond()
+    # testGamesPerSecond()
+    # testValidPawnMovesTiming()
+    testVertexNeighboringCells()
+    testNeighborRemoval()
 
     # q = QuoridorGameState()
     # print q.getLegalMoves()
