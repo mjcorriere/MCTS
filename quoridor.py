@@ -1,6 +1,5 @@
-import time
-import random
 from collections import deque, OrderedDict
+import graph_algorithms
 
 __author__ = 'Markus'
 
@@ -80,7 +79,6 @@ class QuoridorGameState(object):
 
         self.currentPlayer = 1
         self.winner = None
-
 
     def copy(self):
         q = QuoridorGameState()

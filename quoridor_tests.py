@@ -1,5 +1,8 @@
-from quoridor import *
+import time
+import random
 
+from quoridor import *
+import graph_algorithms
 
 def testValidPawnMovesTiming():
     q = QuoridorGameState()
@@ -32,6 +35,7 @@ def testGamesPerSecond():
 
     avgPlayTime = float(sum(playTimes)) / float(len(playTimes))
     gamesPerSec = 1.0 / avgPlayTime
+
     print '\n\n'
     print 'Average play time: ',str(avgPlayTime)
     print 'Max play time: ', str(max(playTimes))
@@ -100,6 +104,7 @@ def testWallBlockingVictory():
 
 
 def testPrintBoard():
+    print "TEST: testPrintBoard()"
     q = QuoridorGameState()
     q.executeMove('h24')
     q.executeMove('v25')
@@ -109,6 +114,19 @@ def testPrintBoard():
     q.executeMove('S')
     print q
 
+def testBridgeAlgorithm():
+    print "TEST: testBridgeAlgorithm()"
+    q = QuoridorGameState()
+    q.executeMove('h41')
+    q.executeMove('h43')
+    q.executeMove('h45')
+    q.executeMove('h47')
+    q.executeMove('v48')
+
+    bridges = graph_algorithms.bridge(q.cellGraph, q.playerPositions[0],
+                                      q.numCells)
+    print q
+    print "BRIDGES: ", str(bridges)
 
 def runAllTests():
     testVertexCellNeighbors()
@@ -128,7 +146,7 @@ def runPassFailTests():
 
 def main():
     runPassFailTests()
-    testGamesPerSecond()
+    testBridgeAlgorithm()
 
 if __name__ == '__main__':
     main()
