@@ -5,6 +5,8 @@ The algorithm for finding graph bridges is implemented and tested, but needs to 
 
 Additionally, the simplification of findValidPawnMoves has resulted in a 2x games per second speedup!
 
+Adding more instrumentation to getLegalMoves() and the most recent bridge finding algorithm has shown that there is a nearly 2 order of magnitude speedup in switching to bridge finding over brute force DFS. Brute force DFS takes 8 ms, while bridge finding seems to be about 0.1 ms.
+
 ## 12/21/16 - Preparing for Tarjan's Algorithm
 The new plan is to keep the graph of connected cells as the game progresses. In this way, I can make connectivity checks to identify bridges and articulation points, representing illegal wall placements. This should significantly reduce the amount of time necessary to find these illegal placements.
 

@@ -13,7 +13,8 @@ def testValidPawnMovesTiming():
     for _ in xrange(100000):
         start = time.clock()
         q._getValidPawnMoves(25)
-        times.append(time.clock() - start)
+        end = time.clock()
+        times.append(end - start)
 
     print "Average time: ", str(float(sum(times)) / float(len(times)))
     print "Max time: ", str(max(times))
@@ -139,12 +140,58 @@ def testBridgeAlgorithm():
     print q
     print "BRIDGES: ", str(bridges)
 
+
+def testBridgeTiming():
+    print "TEST: testBridgeTiming()"
+
+    q = QuoridorGameState()
+    q.executeMove('h41')
+    q.executeMove('h43')
+    q.executeMove('h45')
+    q.executeMove('h47')
+    q.executeMove('v48')
+
+    times = []
+    for _ in xrange(100000):
+        start = time.clock()
+        graph_algorithms.bridge(q.cellGraph, q.playerPositions[0], q.numCells)
+        end = time.clock()
+        times.append(end - start)
+
+    print "Average time: ", str(float(sum(times)) / float(len(times)))
+    print "Max time: ", str(max(times))
+
+
+def testGetLegalMovesTiming():
+    print "TEST: testGetLegalMovesTiming()"
+
+    q = QuoridorGameState()
+    q.executeMove('h41')
+    q.executeMove('h43')
+    q.executeMove('h45')
+    q.executeMove('h47')
+    q.executeMove('v48')
+
+    times = []
+    for _ in xrange(10000):
+        start = time.clock()
+        q.getLegalMoves()
+        end = time.clock()
+        times.append(end - start)
+
+    print "Average time: ", str(float(sum(times)) / float(len(times)))
+    print "Max time: ", str(max(times))
+
+
 def runAllTests():
     testVertexCellNeighbors()
     testWallBlockingVictory()
     testHorizontalWallPlacement()
     testNeighborRemoval()
+    testBridgeAlgorithm()
     testValidPawnMovesTiming()
+    testBridgeTiming()
+    testGetLegalMovesTiming()
     testGamesPerSecond()
 
 
@@ -156,11 +203,7 @@ def runPassFailTests():
 
 
 def main():
-    runPassFailTests()
-    testBridgeAlgorithm()
-    testValidPawnMovesTiming()
-    testPrintBoard()
-    testGamesPerSecond()
+    runAllTests()
 
 if __name__ == '__main__':
     main()
