@@ -5,10 +5,12 @@ from quoridor import *
 import graph_algorithms
 
 def testValidPawnMovesTiming():
+    print "TEST: testValidPawnMovesTiming()"
+
     q = QuoridorGameState()
 
     times = []
-    for _ in xrange(10):
+    for _ in xrange(100000):
         start = time.clock()
         q._getValidPawnMoves(25)
         times.append(time.clock() - start)
@@ -18,6 +20,8 @@ def testValidPawnMovesTiming():
 
 
 def testGamesPerSecond():
+    print "TEST: testGamesPerSecond()"
+
     gameNo = 0
     playTimes = []
     while gameNo < 100:
@@ -44,6 +48,7 @@ def testGamesPerSecond():
 
 def testVertexCellNeighbors():
     print "TEST: testVertexCellNeighbors()"
+
     q = QuoridorGameState()
     neighbors = sorted(q._getVertexCellNeighbors(24))
     assert neighbors == [12, 13, 21, 22]
@@ -57,6 +62,7 @@ def testVertexCellNeighbors():
 
 def testNeighborRemoval():
     print "TEST: testNeighborRemoval()"
+
     q = QuoridorGameState()
 
     q.executeMove('h23')
@@ -74,6 +80,7 @@ def testNeighborRemoval():
 
 def testHorizontalWallPlacement():
     print "TEST: testHorizontalWallPlacement()"
+
     q = QuoridorGameState()
     q.executeMove('h11')
     legalMoves = q.getLegalMoves()
@@ -98,6 +105,7 @@ def testWallBlockingVictory():
     q.executeMove('h45')
     q.executeMove('h47')
     q.executeMove('v48')
+    print q
 
     assert 'h38' not in q.getLegalMoves()
     assert 'h58' not in q.getLegalMoves()
@@ -105,17 +113,20 @@ def testWallBlockingVictory():
 
 def testPrintBoard():
     print "TEST: testPrintBoard()"
+
     q = QuoridorGameState()
     q.executeMove('h24')
     q.executeMove('v25')
     q.executeMove('h11')
     q.executeMove('h13')
-    q.executeMove('N')
-    q.executeMove('S')
+    q.executeMove('13')
+    q.executeMove('67')
     print q
+
 
 def testBridgeAlgorithm():
     print "TEST: testBridgeAlgorithm()"
+
     q = QuoridorGameState()
     q.executeMove('h41')
     q.executeMove('h43')
@@ -147,6 +158,9 @@ def runPassFailTests():
 def main():
     runPassFailTests()
     testBridgeAlgorithm()
+    testValidPawnMovesTiming()
+    testPrintBoard()
+    testGamesPerSecond()
 
 if __name__ == '__main__':
     main()

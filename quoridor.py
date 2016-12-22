@@ -104,7 +104,7 @@ class QuoridorGameState(object):
         # TODO: Add the logic for jumping over players
         # Currently, players will be able to occupy the same spot
 
-        return wallMoves + pawnMoves
+        return wallMoves + map(str, pawnMoves)
 
     def executeMove(self, move):
 
@@ -114,50 +114,10 @@ class QuoridorGameState(object):
 
         assert self.winner is None
 
-        if move in 'NSEW':
-            self.playerPositions[self.currentPlayer - 1] += self.distance[move]
-        elif move[0] == 'h':
-
-            position = int(move[1:])
-
-            # Update the wall list and reduce the walls for that player
-            self.walls[position] = self.currentPlayer + WallType.HORIZONTAL
-            self.numPlayerWalls[self.currentPlayer - 1] -= 1
-
-            # Remove the edges from the graph that have been blocked by the wall
-            cellNeighbors = self.vertexCellGraph[position]
-            assert len(cellNeighbors) == 4
-
-            cellNeighbors.sort()
-            NW, NE, SW, SE = cellNeighbors
-
-            self.cellGraph[NW].remove(SW)
-            self.cellGraph[SW].remove(NW)
-            self.cellGraph[NE].remove(SE)
-            self.cellGraph[SE].remove(NE)
-
-        elif move[0] == 'v':
-
-            position = int(move[1:])
-
-            # Update the wall list and reduce the walls for that player
-            self.walls[position] = self.currentPlayer + WallType.VERTICAL
-            self.numPlayerWalls[self.currentPlayer - 1] -= 1
-
-            # Remove the edges from the graph that have been blocked by the wall
-            cellNeighbors = self.vertexCellGraph[position]
-            assert len(cellNeighbors) == 4
-
-            cellNeighbors.sort()
-            NW, NE, SW, SE = cellNeighbors
-
-            self.cellGraph[NW].remove(NE)
-            self.cellGraph[NE].remove(NW)
-            self.cellGraph[SW].remove(SE)
-            self.cellGraph[SE].remove(SW)
-
+        if move[0] == 'h' or move[0] == 'v':
+            self._doWallMove(move)
         else:
-            raise Exception("Invalid Move: ", str(move))
+            self.playerPositions[self.currentPlayer - 1] = int(move)
 
         self.checkForWin()
         self.currentPlayer = 3 - self.currentPlayer
@@ -168,6 +128,64 @@ class QuoridorGameState(object):
             self.winner = 1
         elif p2 >= self.boardSize**2 - self.boardSize:
             self.winner = 2
+
+    def _doWallMove(self, move):
+
+        position = int(move[1:])
+
+        self.numPlayerWalls[self.currentPlayer - 1] -= 1
+
+        cellNeighbors = self.vertexCellGraph[position]
+        cellNeighbors.sort()
+
+        assert len(cellNeighbors) == 4
+        NW, NE, SW, SE = cellNeighbors
+
+        if move[0] == 'h':
+            # Update the wall list and reduce the walls for that player
+            self.walls[position] = self.currentPlayer + WallType.HORIZONTAL
+
+            self.cellGraph[NW].remove(SW)
+            self.cellGraph[SW].remove(NW)
+            self.cellGraph[NE].remove(SE)
+            self.cellGraph[SE].remove(NE)
+
+        elif move[0] == 'v':
+            # Update the wall list and reduce the walls for that player
+            self.walls[position] = self.currentPlayer + WallType.VERTICAL
+
+            self.cellGraph[NW].remove(NE)
+            self.cellGraph[NE].remove(NW)
+            self.cellGraph[SW].remove(SE)
+            self.cellGraph[SE].remove(SW)
+
+    def _undoWallMove(self, move):
+
+        position = int(move[1:])
+
+        self.numPlayerWalls[self.currentPlayer - 1] += 1
+
+        cellNeighbors = self.vertexCellGraph[position]
+        cellNeighbors.sort()
+
+        assert len(cellNeighbors) == 4
+        NW, NE, SW, SE = cellNeighbors
+
+        self.walls[position] = WallType.EMPTY
+
+        if move[0] == 'h':
+
+            self.cellGraph[NW].append(SW)
+            self.cellGraph[SW].append(NW)
+            self.cellGraph[NE].append(SE)
+            self.cellGraph[SE].append(NE)
+
+        elif move[0] == 'v':
+
+            self.cellGraph[NW].append(NE)
+            self.cellGraph[NE].append(NW)
+            self.cellGraph[SW].append(SE)
+            self.cellGraph[SE].append(SW)
 
     def _createCellGraph(self):
         self.cellGraph = []
@@ -213,20 +231,7 @@ class QuoridorGameState(object):
         return wallMoves
 
     def _getValidPawnMoves(self, cell):
-        NW, NE, SW, SE = self.cellVertexGraph[cell]
-
-        canMoveNorth = not self.walls[NW] & WallType.HORIZONTAL and \
-                        not self.walls[NE] & WallType.HORIZONTAL
-        canMoveSouth = not self.walls[SW] & WallType.HORIZONTAL and \
-                        not self.walls[SE] & WallType.HORIZONTAL
-        canMoveEast = not self.walls[NE] & WallType.VERTICAL and \
-                        not self.walls[SE] & WallType.VERTICAL
-        canMoveWest = not self.walls[NW] & WallType.VERTICAL and \
-                        not self.walls[SW] & WallType.VERTICAL
-
-        return [d for d, canMove in zip('NSEW', [canMoveNorth, canMoveSouth,
-                                                 canMoveEast, canMoveWest])
-                if canMove]
+        return self.cellGraph[cell]
 
     def _isValidCell(self, cell):
         return cell >= 0 and cell < self.numCells
@@ -237,8 +242,9 @@ class QuoridorGameState(object):
     def _doesWallBlockVictory(self, wall, wallType):
 
         iterations = 0
+        wallChar = 'h' if wallType == WallType.HORIZONTAL else 'v'
 
-        self.walls[wall] = wallType
+        self._doWallMove(wallChar + str(wall))
 
         if not self._doesWallTouchAnotherWall(wall):
             blocksVictory = False
@@ -264,10 +270,8 @@ class QuoridorGameState(object):
 
             while len(frontier) > 0:
                 current = frontier.pop()
-                neighbors = [current + self.distance[d] for d in
-                            self._getValidPawnMoves(current)
-                            if self._isValidCell(current + self.distance[d])
-                            and not visited[current + self.distance[d]]]
+                neighborCandidates = self.cellGraph[current]
+                neighbors = [n for n in neighborCandidates if not visited[n]]
 
                 if any(n in victoryCells for n in neighbors):
                     blocksVictory = False
@@ -281,7 +285,7 @@ class QuoridorGameState(object):
 
         # print "DFS iterations: ", str(iterations)
 
-        self.walls[wall] = WallType.EMPTY
+        self._undoWallMove(wallChar + str(wall))
 
         return blocksVictory
 
