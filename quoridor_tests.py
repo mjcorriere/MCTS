@@ -128,6 +128,7 @@ def runPassFailTests():
 
 def main():
     runPassFailTests()
+    testGamesPerSecond()
 
 if __name__ == '__main__':
     main()

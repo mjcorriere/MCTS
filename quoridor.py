@@ -61,9 +61,11 @@ class QuoridorGameState(object):
         ])
 
         # Static relationships about the board
+        # TODO: These should be static variables and should not be recreated
+        # for each instance of the board if using a fixed board size
         self._createCellVertexGraph()
-        # TODO: self._createVertexVertexGraph()
-        # TODO: self._createVertexCellGraph
+        # TODO:  self._createVertexVertexGraph()
+        self._createVertexCellGraph()
 
         # Dynamic relationship about the board
         self._createCellGraph()
@@ -125,7 +127,7 @@ class QuoridorGameState(object):
             self.numPlayerWalls[self.currentPlayer - 1] -= 1
 
             # Remove the edges from the graph that have been blocked by the wall
-            cellNeighbors = self._getVertexCellNeighbors(position)
+            cellNeighbors = self.vertexCellGraph[position]
             assert len(cellNeighbors) == 4
 
             cellNeighbors.sort()
@@ -145,7 +147,7 @@ class QuoridorGameState(object):
             self.numPlayerWalls[self.currentPlayer - 1] -= 1
 
             # Remove the edges from the graph that have been blocked by the wall
-            cellNeighbors = self._getVertexCellNeighbors(position)
+            cellNeighbors = self.vertexCellGraph[position]
             assert len(cellNeighbors) == 4
 
             cellNeighbors.sort()
@@ -393,10 +395,18 @@ class QuoridorGameState(object):
                 list(self._getCellVertexNeighbors(cell)))
 
     def _createVertexVertexGraph(self):
-        pass
+        self.vertexVertexGraph = []
+        for vertex in xrange(self.numVertexes):
+            self.vertexVertexGraph.append(
+                self._getVertexVertexNeighbors(vertex)
+            )
 
     def _createVertexCellGraph(self):
-        pass
+        self.vertexCellGraph = []
+        for vertex in xrange(self.numVertexes):
+            self.vertexCellGraph.append(
+                self._getVertexCellNeighbors(vertex)
+            )
 
     def _isVerticalWall(self, wall):
         if wall < 0 or wall >= self.numVertexes:
