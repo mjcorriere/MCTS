@@ -1,5 +1,10 @@
 # Development Notes
 
+## 12/22/16 - Implementing Tarjan's Algorithm
+The algorithm for finding graph bridges is implemented and tested, but needs to be applied to the game domain. I need to map the output of the algorithm (bridges in the form of node pairs (u, v)) to actual wall locations. Even though these edges may be bridges, they may not actually block a player from reaching a goal. For example, a player may draw a square around an interior region, separating that region from the graph. However, so long as a player is not inside this region, it would not be an illegal wall placement.
+
+Additionally, the simplification of findValidPawnMoves has resulted in a 2x games per second speedup!
+
 ## 12/21/16 - Preparing for Tarjan's Algorithm
 The new plan is to keep the graph of connected cells as the game progresses. In this way, I can make connectivity checks to identify bridges and articulation points, representing illegal wall placements. This should significantly reduce the amount of time necessary to find these illegal placements.
 
