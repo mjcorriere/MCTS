@@ -258,6 +258,7 @@ class QuoridorGameState(object):
             frontier.append(root)
             blocksVictory = True
 
+            # TODO: BUG. Check if the wall blocks _yourself_ as well (duh)
             if opponent == 1:
                 victoryCells = range(0, self.boardSize)
                 sortDescending = True
@@ -469,6 +470,7 @@ def playGame():
     move = ''
     while move != 'q' or q.winner is None:
         print q
+        print q.getLegalMoves()
         move = raw_input('Enter Move: ')
         if move in q.getLegalMoves():
             q.executeMove(move)

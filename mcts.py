@@ -26,6 +26,8 @@ class MCTSNode(object):
     def selectBestMove(self):
         bestChild = max(self.children,
                    key=lambda child: float(child.value) / float(child.visits))
+        print "Best Child Value: ", str(bestChild.value)
+        print "Best Child Visits: ", str(bestChild.visits)
         return bestChild.move
 
     def isTerminal(self):

@@ -1,3 +1,4 @@
+import time
 
 import mcts
 import quoridor
@@ -9,10 +10,14 @@ def playMCTSgame():
     node = root
 
     while q.winner is None:
-        move = mcts.mcts(node, 200)
+        start = time.clock()
+        move = mcts.mcts(node, 10000)
+        end = time.clock()
+        print "Move time: " , str(end - start)
         q.executeMove(move)
         node = mcts.MCTSNode(q)
-        print "Move:", move
+
+        print "Player", str(3 % q.currentPlayer), "Move:", move
         print q
 
     print "Winner is player", q.winner

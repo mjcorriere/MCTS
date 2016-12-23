@@ -1,5 +1,12 @@
 # Development Notes
 
+## 12/23/16 - Play Strength Investigation (and bugs!)
+I began to watch games played between two MCTS players of equal strength (iterations = 100). It looked an awful lot like they were playing random moves for the first 90% of the game. Sure enough, investigating the number of visits to each "best move" node selected in the MCTS tree revealed these nodes had only been visited once. 
+
+Ramping up the number of iterations to 1000, these nodes were now being visited approximately 15-20 times, but the win rates were hovering about 50%. 
+
+Jumping up another order of magnitude to 10000 iterations uncovered a sneaky bug in the calculation of legal moves. Many times during the simulation phase I received an exception from random.choice() -- it was being called on an empty list. Digging deeper, I discovered that the players were blocking _themselves_ in. The legal move check was only making sure the current player wasn't stopping the opponent from winning. Oops.
+
 ## 12/22/16 - Implementing Tarjan's Algorithm
 The algorithm for finding graph bridges is implemented and tested, but needs to be applied to the game domain. I need to map the output of the algorithm (bridges in the form of node pairs (u, v)) to actual wall locations. Even though these edges may be bridges, they may not actually block a player from reaching a goal. For example, a player may draw a square around an interior region, separating that region from the graph. However, so long as a player is not inside this region, it would not be an illegal wall placement.
 
