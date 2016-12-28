@@ -1,5 +1,8 @@
 # Development Notes
 
+## 12/28/16 - Cython Experiments
+Created a toy Cython implementation. The code was taken 100% as is and passed over to Cython to get a sense of the speed-up. Cython provided ~2x games per second speed-up essentially for free. Cython will be a great option for squeezing out additional performance once I've established a solid foundation of data structures and algorithms. 'cdef'ing variable types and providing fixed length arrays should really get this thing moving.
+
 ## 12/23/16 - Play Strength Investigation (and bugs!)
 I began to watch games played between two MCTS players of equal strength (iterations = 100). It looked an awful lot like they were playing random moves for the first 90% of the game. Sure enough, investigating the number of visits to each "best move" node selected in the MCTS tree revealed these nodes had only been visited once. 
 
