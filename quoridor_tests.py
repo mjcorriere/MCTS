@@ -97,8 +97,8 @@ def testHorizontalWallPlacement():
     assert 'v21' in legalMoves
 
 
-def testWallBlockingVictory():
-    print "TEST: testWallBlockingVictory()"
+def testWallBlockingOpponentVictory():
+    print "TEST: testWallBlockingOpponentVictory()"
 
     q = QuoridorGameState()
     q.executeMove('h41')
@@ -110,6 +110,16 @@ def testWallBlockingVictory():
 
     assert 'h38' not in q.getLegalMoves()
     assert 'h58' not in q.getLegalMoves()
+
+def testWallBlockingSelfVictory():
+    print "TEST: testWallBlockingSelfVictory()"
+
+    q = QuoridorGameState()
+    q.executeMove('v84')
+    q.executeMove('h85')
+    print q
+
+    assert 'v86' not in q.getLegalMoves()
 
 
 def testPrintBoard():
@@ -185,7 +195,8 @@ def testGetLegalMovesTiming():
 
 def runAllTests():
     testVertexCellNeighbors()
-    testWallBlockingVictory()
+    testWallBlockingOpponentVictory()
+    testWallBlockingSelfVictory()
     testHorizontalWallPlacement()
     testNeighborRemoval()
     testBridgeAlgorithm()
@@ -197,7 +208,8 @@ def runAllTests():
 
 def runPassFailTests():
     testVertexCellNeighbors()
-    testWallBlockingVictory()
+    testWallBlockingOpponentVictory()
+    testWallBlockingSelfVictory()
     testHorizontalWallPlacement()
     testNeighborRemoval()
 

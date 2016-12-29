@@ -250,39 +250,42 @@ class QuoridorGameState(object):
             blocksVictory = False
 
         else:
-            visited = [False] * self.numCells
-            frontier = deque()
+            for opponent in [1, 2]:
+                visited = [False] * self.numCells
+                frontier = deque()
 
-            opponent = 3 - self.currentPlayer
-            root = self.playerPositions[opponent - 1]
-            frontier.append(root)
-            blocksVictory = True
+                root = self.playerPositions[opponent - 1]
+                frontier.append(root)
+                blocksVictory = True
 
-            # TODO: BUG. Check if the wall blocks _yourself_ as well (duh)
-            if opponent == 1:
-                victoryCells = range(0, self.boardSize)
-                sortDescending = True
-            elif opponent == 2:
-                victoryCells = range(self.boardSize**2 - self.boardSize,
-                                     self.boardSize**2)
-                sortDescending = False
-            else:
-                raise Exception("Invalid opponent")
+                # TODO: BUG. Check if the wall blocks _yourself_ as well (duh)
+                if opponent == 1:
+                    victoryCells = range(0, self.boardSize)
+                    sortDescending = True
+                elif opponent == 2:
+                    victoryCells = range(self.boardSize**2 - self.boardSize,
+                                         self.boardSize**2)
+                    sortDescending = False
+                else:
+                    raise Exception("Invalid opponent")
 
-            while len(frontier) > 0:
-                current = frontier.pop()
-                neighborCandidates = self.cellGraph[current]
-                neighbors = [n for n in neighborCandidates if not visited[n]]
+                while len(frontier) > 0:
+                    current = frontier.pop()
+                    neighborCandidates = self.cellGraph[current]
+                    neighbors = [n for n in neighborCandidates
+                                 if not visited[n]]
 
-                if any(n in victoryCells for n in neighbors):
-                    blocksVictory = False
+                    if any(n in victoryCells for n in neighbors):
+                        blocksVictory = False
+                        break
+
+                    neighbors.sort(reverse=sortDescending)
+
+                    frontier.extend(neighbors)
+                    visited[current] = True
+                    iterations += 1
+                if blocksVictory:
                     break
-
-                neighbors.sort(reverse=sortDescending)
-
-                frontier.extend(neighbors)
-                visited[current] = True
-                iterations += 1
 
         # print "DFS iterations: ", str(iterations)
 
