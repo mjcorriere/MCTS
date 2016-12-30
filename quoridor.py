@@ -249,11 +249,8 @@ class QuoridorGameState(object):
         return wallMoves
 
     def _getValidPawnMoves(self, cell):
-        # TODO / BUG: Returns the goal node as a valid pawn move.
-        # The pawn moves there and gets stuck, as the goal node
-        # has no neighbors to move to. Might not be able to store
-        # goal node in self.cellGraph
-        return self.cellGraph[cell]
+        return [c for c in self.cellGraph[cell]
+                if c != self.PLAYER1_GOAL and c != self.PLAYER2_GOAL]
 
     def _isValidCell(self, cell):
         return cell >= 0 and cell < self.numCells
@@ -263,7 +260,6 @@ class QuoridorGameState(object):
 
     def _doesWallBlockVictory(self, wall, wallType):
 
-        iterations = 0
         wallChar = 'h' if wallType == WallType.HORIZONTAL else 'v'
 
         self._doWallMove(wallChar + str(wall))
@@ -273,47 +269,17 @@ class QuoridorGameState(object):
 
         else:
             for opponent in [1, 2]:
-                # +2 for each goal cell
-                visited = [False] * (self.numCells + 2)
-                frontier = deque()
 
-                root = self.playerPositions[opponent - 1]
-                frontier.append(root)
-                blocksVictory = True
-
-                # TODO: BUG. Check if the wall blocks _yourself_ as well (duh)
                 if opponent == 1:
-                    victoryCells = range(0, self.boardSize)
-                    sortDescending = True
                     goal = self.PLAYER1_GOAL
                 elif opponent == 2:
-                    victoryCells = range(self.boardSize**2 - self.boardSize,
-                                         self.boardSize**2)
-                    sortDescending = False
                     goal = self.PLAYER2_GOAL
                 else:
                     raise Exception("Invalid opponent")
 
-                while len(frontier) > 0:
-                    current = frontier.pop()
-                    neighborCandidates = self.cellGraph[current]
-                    neighbors = [n for n in neighborCandidates
-                                 if not visited[n]]
+                root = self.playerPositions[opponent - 1]
 
-                    if goal in neighbors:
-                        blocksVictory = False
-                        break
-
-                    neighbors.sort(reverse=sortDescending)
-
-                    frontier.extend(neighbors)
-                    visited[current] = True
-                    iterations += 1
-
-                if blocksVictory:
-                    break
-
-        # print "DFS iterations: ", str(iterations)
+                result = graph_algorithms.greedyBestFirst(self.cellGraph, root, goal)
 
         self._undoWallMove(wallChar + str(wall))
 

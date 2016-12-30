@@ -1,7 +1,9 @@
+
+from collections import deque
+import heapq
+
 # Python program to find bridges in a given undirected graph
 # Complexity : O(V+E)
-
-
 def bridgeUtil(graph, u, visited, parent, low, disc, time, bridges):
 
     # Count of children in current node
@@ -37,7 +39,6 @@ def bridgeUtil(graph, u, visited, parent, low, disc, time, bridges):
         elif v != parent[u]:
             low[u] = min(low[u], disc[v])
 
-
 # DFS based function to find all bridges.
 def bridge(graph, root, numVertices):
 
@@ -51,3 +52,34 @@ def bridge(graph, root, numVertices):
     bridgeUtil(graph, root, visited, parent, low, disc, 0, bridges)
 
     return bridges
+
+
+def rowDistance(cell, row, boardSize):
+    cellRow = cell / boardSize
+    return abs(row - cellRow)
+
+
+def greedyBestFirst(graph, root, goal, boardSize=9, hueristic=rowDistance):
+
+        visited = [False] * len(graph)
+        frontier = []
+
+        heapq.heappush(frontier, (hueristic(root, goalRow), root))
+
+        blocksVictory = True
+
+        while len(frontier) > 0:
+            current = heapq.heappop(frontier)
+            neighborCandidates = graph[current]
+            neighbors = [n for n in neighborCandidates if not visited[n]]
+
+            if goal in neighbors:
+                blocksVictory = False
+                break
+
+            for n in neighbors:
+                heapq.heappush(frontier, (hueristic(n, goalRow), n))
+
+            visited[current] = True
+
+        return blocksVictory
