@@ -1,5 +1,8 @@
 # Development Notes
 
+## 12/30/16 - The Addition of the Goal Node
+The addition of the goal node may not have been as clever as I had previously though. The initial reason for adding the node was to give A* (or other search algorithms) a single target to aim for when traversing the graph. However, I am currently having a problem where the distance to this goal node cannot be estimated. Why? The goal node does not live in the 2d space of the grid. Instead, it represents a group of nodes (all the nodes resulting in a victory condition). The idea of distance to this goal node would become the shortest distance to any of the nodes in the goal set. While this is feasible, it doesn't result in nice, clear, general code. The best first search code will be specific to this problem. Though I suppose if the only change to the algorithm lies in the distance heuristic, it may not be a problem after all.
+
 ## 12/28/16 - Cython Experiments
 Created a toy Cython implementation. The code was taken 100% as is and passed over to Cython to get a sense of the speed-up. Cython provided ~2x games per second speed-up essentially for free. Cython will be a great option for squeezing out additional performance once I've established a solid foundation of data structures and algorithms. 'cdef'ing variable types and providing fixed length arrays should really get this thing moving.
 
