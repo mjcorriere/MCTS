@@ -108,8 +108,9 @@ def testWallBlockingOpponentVictory():
     q.executeMove('v48')
     print q
 
-    assert 'h38' not in q.getLegalMoves()
-    assert 'h58' not in q.getLegalMoves()
+    legalMoves = q.getLegalMoves()
+    assert 'h38' not in legalMoves
+    assert 'h58' not in legalMoves
 
 def testWallBlockingSelfVictory():
     print "TEST: testWallBlockingSelfVictory()"
@@ -146,7 +147,7 @@ def testBridgeAlgorithm():
     q.executeMove('v48')
 
     bridges = graph_algorithms.bridge(q.cellGraph, q.playerPositions[0],
-                                      q.numCells)
+                                      q.numCells + 2)
     print q
     print "BRIDGES: ", str(bridges)
 
@@ -164,7 +165,7 @@ def testBridgeTiming():
     times = []
     for _ in xrange(100000):
         start = time.clock()
-        graph_algorithms.bridge(q.cellGraph, q.playerPositions[0], q.numCells)
+        graph_algorithms.bridge(q.cellGraph, q.playerPositions[0], q.numCells + 2)
         end = time.clock()
         times.append(end - start)
 

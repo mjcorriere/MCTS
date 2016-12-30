@@ -66,6 +66,10 @@ class QuoridorGameState(object):
         # TODO:  self._createVertexVertexGraph()
         self._createVertexCellGraph()
 
+        # Special goal cells that are used to simplify graph traversals
+        self.PLAYER1_GOAL = self.numCells
+        self.PLAYER2_GOAL = self.numCells + 1
+
         # Dynamic relationship about the board
         self._createCellGraph()
 
@@ -202,6 +206,20 @@ class QuoridorGameState(object):
                 neighbors.append(W)
             self.cellGraph.append(sorted(neighbors))
 
+        # Add the goal node relationships
+        topRow = range(0, self.boardSize)
+        bottomRow = range(self.numCells - self.boardSize, self.numCells)
+
+        # Player 1 goal is the top row, player 2 goal is the bottom row
+        for cell in topRow:
+            self.cellGraph[cell].append(self.PLAYER1_GOAL)
+        for cell in bottomRow:
+            self.cellGraph[cell].append(self.PLAYER2_GOAL)
+
+        # The goal nodes have no outgoing connections. They are empty.
+        self.cellGraph.append([])
+        self.cellGraph.append([])
+
     def _getValidWallMoves(self):
         # Determine wall moves if the current player has walls to place
         wallMoves = []
@@ -231,6 +249,10 @@ class QuoridorGameState(object):
         return wallMoves
 
     def _getValidPawnMoves(self, cell):
+        # TODO / BUG: Returns the goal node as a valid pawn move.
+        # The pawn moves there and gets stuck, as the goal node
+        # has no neighbors to move to. Might not be able to store
+        # goal node in self.cellGraph
         return self.cellGraph[cell]
 
     def _isValidCell(self, cell):
@@ -251,7 +273,8 @@ class QuoridorGameState(object):
 
         else:
             for opponent in [1, 2]:
-                visited = [False] * self.numCells
+                # +2 for each goal cell
+                visited = [False] * (self.numCells + 2)
                 frontier = deque()
 
                 root = self.playerPositions[opponent - 1]
@@ -262,10 +285,12 @@ class QuoridorGameState(object):
                 if opponent == 1:
                     victoryCells = range(0, self.boardSize)
                     sortDescending = True
+                    goal = self.PLAYER1_GOAL
                 elif opponent == 2:
                     victoryCells = range(self.boardSize**2 - self.boardSize,
                                          self.boardSize**2)
                     sortDescending = False
+                    goal = self.PLAYER2_GOAL
                 else:
                     raise Exception("Invalid opponent")
 
@@ -275,7 +300,7 @@ class QuoridorGameState(object):
                     neighbors = [n for n in neighborCandidates
                                  if not visited[n]]
 
-                    if any(n in victoryCells for n in neighbors):
+                    if goal in neighbors:
                         blocksVictory = False
                         break
 
@@ -284,6 +309,7 @@ class QuoridorGameState(object):
                     frontier.extend(neighbors)
                     visited[current] = True
                     iterations += 1
+
                 if blocksVictory:
                     break
 
