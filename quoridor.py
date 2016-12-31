@@ -260,6 +260,8 @@ class QuoridorGameState(object):
 
     def _doesWallBlockVictory(self, wall, wallType):
 
+        blocksVictory = False
+
         wallChar = 'h' if wallType == WallType.HORIZONTAL else 'v'
 
         self._doWallMove(wallChar + str(wall))
@@ -268,18 +270,10 @@ class QuoridorGameState(object):
             blocksVictory = False
 
         else:
-            for opponent in [1, 2]:
-
-                if opponent == 1:
-                    goal = self.PLAYER1_GOAL
-                elif opponent == 2:
-                    goal = self.PLAYER2_GOAL
-                else:
-                    raise Exception("Invalid opponent")
-
-                root = self.playerPositions[opponent - 1]
-
-                result = graph_algorithms.greedyBestFirst(self.cellGraph, root, goal)
+            for player in [0, 1]:
+                if not graph_algorithms.greedyBestFirst(self, player):
+                    blocksVictory = True
+                    break
 
         self._undoWallMove(wallChar + str(wall))
 

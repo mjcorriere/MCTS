@@ -59,27 +59,35 @@ def rowDistance(cell, row, boardSize):
     return abs(row - cellRow)
 
 
-def greedyBestFirst(graph, root, goal, boardSize=9, hueristic=rowDistance):
+def greedyBestFirst(gamestate, player, heuristic=rowDistance):
+
+        graph = gamestate.cellGraph
+        boardSize = gamestate.boardSize
+        root = gamestate.playerPositions[player]
+        goal = [gamestate.PLAYER1_GOAL, gamestate.PLAYER2_GOAL][player]
+        goalRow = [0, boardSize - 1][player]
 
         visited = [False] * len(graph)
+        inQueue = [False] * len(graph)
         frontier = []
 
-        heapq.heappush(frontier, (hueristic(root, goalRow), root))
+        heapq.heappush(frontier, (heuristic(root, goalRow, boardSize), root))
 
-        blocksVictory = True
+        canBeReached = False
 
         while len(frontier) > 0:
-            current = heapq.heappop(frontier)
+            current = heapq.heappop(frontier)[1]
             neighborCandidates = graph[current]
-            neighbors = [n for n in neighborCandidates if not visited[n]]
+            neighbors = [n for n in neighborCandidates if not visited[n] and not inQueue[n]]
 
             if goal in neighbors:
-                blocksVictory = False
+                canBeReached = True
                 break
 
             for n in neighbors:
-                heapq.heappush(frontier, (hueristic(n, goalRow), n))
+                heapq.heappush(frontier, (heuristic(n, goalRow, boardSize), n))
+                inQueue[n] = True
 
             visited[current] = True
 
-        return blocksVictory
+        return canBeReached

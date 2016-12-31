@@ -163,7 +163,7 @@ def testBridgeTiming():
     q.executeMove('v48')
 
     times = []
-    for _ in xrange(100000):
+    for _ in xrange(10000):
         start = time.clock()
         graph_algorithms.bridge(q.cellGraph, q.playerPositions[0], q.numCells + 2)
         end = time.clock()
@@ -184,7 +184,7 @@ def testGetLegalMovesTiming():
     q.executeMove('v48')
 
     times = []
-    for _ in xrange(10000):
+    for _ in xrange(1000):
         start = time.clock()
         q.getLegalMoves()
         end = time.clock()
