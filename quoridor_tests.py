@@ -205,6 +205,7 @@ def runAllTests():
     testBridgeTiming()
     testGetLegalMovesTiming()
     testGamesPerSecond()
+    # TODO: Test edgeWallGraph results for sanity
 
 
 def runPassFailTests():

@@ -65,6 +65,7 @@ class QuoridorGameState(object):
         self._createCellVertexGraph()
         # TODO:  self._createVertexVertexGraph()
         self._createVertexCellGraph()
+        self._createEdgeWallGraph()
 
         # Special goal cells that are used to simplify graph traversals
         self.PLAYER1_GOAL = self.numCells
@@ -399,6 +400,39 @@ class QuoridorGameState(object):
             self.vertexCellGraph.append(
                 self._getVertexCellNeighbors(vertex)
             )
+
+    def _createEdgeWallGraph(self):
+        """
+        Creates the relationship between a cell-cell edge and the wall that
+        would result in severing this edge. The resulting dictionary keys are
+        only stored for one direction, where the cell-cell edge (u, v)is always
+        stored in such a fashion that u is less than v.
+
+        This graph is useful for taking a bridge and determining which walls
+        to check for the block victory condition.
+        """
+
+        self.edgeWallGraph = {}
+        for c in xrange(self.numCells):
+            # Find the 4 neighboring vertices of this cell
+            NW, NE, SW, SE = self._getCellVertexNeighbors(c)
+
+            # Calculate and validate the eastern and southern neighbor of this
+            # cell
+            E, S = c + self.distance['E'], c + self.distance['S']
+            E = E if self._isValidCell(E) and self._inSameRow(c, E) else None
+            S = S if self._isValidCell(S) else None
+
+            # If a valid eastern neighbor exists, add it to the graph.
+            # Only vertical walls can block an eastern movement.
+            if E:
+                self.edgeWallGraph[(c, E)] = ['v' + str(v) for v in [NE, SE]
+                                                if v in self.nonRimWalls]
+            # If a valid southern neighbor exists, add it to the graph.
+            # Only horizontal walls can block a southern movement.
+            if S:
+                self.edgeWallGraph[(c, S)] = ['h' + str(v) for v in [SW, SE]
+                                                if v in self.nonRimWalls]
 
     def _isVerticalWall(self, wall):
         if wall < 0 or wall >= self.numVertexes:
