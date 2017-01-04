@@ -1,5 +1,18 @@
 # Development Notes
 
+## 01/04/16 - Tarjan's Failure and Other Musings
+The finding of bridges in the graph failed due to an oversight. A bridge in the gameboard graph is where a SINGLE edge removal would result in a blocked path. However, when a wall is placed, more often than not TWO edges are severed. Tarjan's algorithm only looks for single edge removals. An extension to look for doulbe removals would require an entirely new algorithm. As an aside, when the algorithm did work, there was an order of magnitude improvement in games per second -- 10 gp to 100 gps.
+
+Where to go from here is somewhat muddy. Ultimately, I am looking for something than can quickly detect connectivity between two nodes. There are algorithms to accomplish this, but they are much more involved to implement and  understand. 
+
+One promising algorithm to evaluate in this area would be decremental connectivity. The graph would begin in a fully connected state, and connectivity between nodes would be updated each time edges have been removed. This algorithm appears to be somewhat expensive and slightly confusing. For an optimal implementation, multithreading (or interleaving) is necessary.
+
+Another approach I have dreamt up would be to store another graph of the walls, and to detect any cycles that would be created by placement of a wall. A cycle would represent an opportunity for a player to be blocked in. Only walls that create cycles would need DFS to be run to confirm that the players can still reach their respective goals.
+
+Something to consider for any algorithm is to store as much calculated information as possible to reduce coming to the same conclusions about wall legality over and over. It may be possible to deduce a subset of walls that will need to be checked next time instead of checking all walls each time.
+
+Another consideration is to use a graph library like networkx. Most if not all graph algorithms I would be interested in using have been implemented. If the graph representation and management doesn't add too much overhead this is probably the smartest direction to head in. New algorithm approaches would be trivial to test against each other as they wouldn't need to be implemented from scratch each time.
+
 ## 12/30/16 - The Addition of the Goal Node
 The addition of the goal node may not have been as clever as I had previously though. The initial reason for adding the node was to give A* (or other search algorithms) a single target to aim for when traversing the graph. However, I am currently having a problem where the distance to this goal node cannot be estimated. Why? The goal node does not live in the 2d space of the grid. Instead, it represents a group of nodes (all the nodes resulting in a victory condition). The idea of distance to this goal node would become the shortest distance to any of the nodes in the goal set. While this is feasible, it doesn't result in nice, clear, general code. The best first search code will be specific to this problem. Though I suppose if the only change to the algorithm lies in the distance heuristic, it may not be a problem after all.
 
