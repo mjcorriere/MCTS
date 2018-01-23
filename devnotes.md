@@ -1,4 +1,10 @@
 # Development Notes
+## 01/23/18 - Two Years Later - Ideas
+A couple of new ideas dawned on me browsing through this old repository over 2 years later.
+
+The first idea is a riff on the cycle detection thought I had 2 years ago. Instead of running a real cycle detection algorithm for each wall, instead it should be good enough to test if a new wall touches two neighboring walls. If it touches less than 2 walls it would be impossible to block the players path to the goal.
+
+The second and (maybe) more interesting idea is instead to keep track of the players' current best path to the goal. Then it would only be necessary to check walls that intersect this path. If a wall does not intersect the path there is no work to be done. This seems like a much better approach!
 
 ## 01/04/16 - Tarjan's Failure and Other Musings
 The finding of bridges in the graph failed due to an oversight. A bridge in the graph is where a SINGLE edge removal would result in a blocked path. However, when a wall is placed, more often than not TWO edges are severed. Tarjan's algorithm only works for single edge removals. Looking for double removals would require an entirely new algorithm. As an aside, when the algorithm did work, there was an order of magnitude improvement in games per second -- 10 gps to 100 gps. 
